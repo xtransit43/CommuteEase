@@ -4,7 +4,10 @@ import { Link, Stack } from 'expo-router';
 export default function NotFoundScreen(){
 	return (
 		<>
-			<Stack.Screen options = {{ title: "Error: Page Not Found"}} />
+			<Stack.Screen options = {{ 
+				title: "Error: Page Not Found", 
+				headerTitleAlign: 'center',
+			}} />
 			<View style = {styles.container}>
 				<Link href = '/' style = {styles.button}>
 					Click here to head back to the home screen
@@ -23,7 +26,7 @@ const styles = StyleSheet.create({
 
 	},
 	button: {
-		fontSize: 20,
+		fontSize: 32,
 		textDecorationLine: 'underline',
 		color: '#fff',
 	},

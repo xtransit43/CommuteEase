@@ -5,10 +5,10 @@ export default function TabLayout() {
   return (
     <Tabs 
       screenOptions = {{
-        tabBarActiveColor: '#ffd3d',
+        tabBarActiveTintColor: '#ffd3d',
+        tabBarInactiveTintColor: '#FFFFF',
       }}
     >
-    <Tabs>
       <Tabs.Screen 
         name="index" 
         options={{ 
@@ -23,7 +23,15 @@ export default function TabLayout() {
         options={{ 
           title: 'About',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name = {focused? 'information-circle' : 'information-circle-outline' color = {color} size = {24}/>
+            <Ionicons name = {focused? 'information-circle' : 'information-circle-outline'} color = {color} size = {24}/>
+          ),
+        }}/>
+      <Tabs.Screen 
+        name="maps" 
+        options={{ 
+          title: 'Maps',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name = {focused? 'map' : 'map-outline'} color = {color} size = {24}/>
           ),
         }}/>
     </Tabs>

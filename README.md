@@ -1,9 +1,7 @@
 # CommuteEase
 
 ## Project Overview
-**CommuteEase** is a cross-platform mobile and web application built using React Native and Expo Router. Designed to ease the strain of long commutes, the app provides an integrated OpenGIS mapping system complete with live GPS tracking, nearby gas or EV charging station discovery via the Overpass API, and persistent user profile preferences.
-
----
+**CommuteEase** is a cross-platform mobile and web application built with React Native and Expo Router designed to reduce commute stress. It features an integrated OpenGIS mapping system with live GPS tracking, dynamic gas and EV charging station discovery via the Overpass API, vehicle preference routing, and secure Node.js API-driven account and session management.---
 
 ## Features
 * **Cross-Platform Responsive Navigation**: Automatically switches between a mobile bottom tab bar layout and a desktop-style sidebar navigation panel based on screen size.

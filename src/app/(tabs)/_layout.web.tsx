@@ -1,9 +1,11 @@
+import React, { useEffect, useState } from 'react';
 import { Slot, Link, usePathname } from 'expo-router';
-import { View, Text, StyleSheet, useWindowDimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions, Pressable, Platform } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import * as SecureStore from 'expo-secure-store';
 
 type NavItemProps = {
-  href: "/" | "/about" | "/maps";
+  href: "/" | "/about" | "/maps" | "/settings" | "/login";
   label: string;
   icon: keyof typeof MaterialIcons.glyphMap;
   isSidebar: boolean;
@@ -12,6 +14,32 @@ type NavItemProps = {
 export default function WebLayout() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768; // Desktop Breakpoint
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        let userId = null;
+        let storedUsername = null;
+
+        if (Platform.OS === 'web') {
+          userId = localStorage.getItem('userId');
+          storedUsername = localStorage.getItem('username');
+        } else {
+          userId = await SecureStore.getItemAsync('userId');
+          storedUsername = await SecureStore.getItemAsync('username');
+        }
+
+        setIsLoggedIn(!!userId);
+        if (storedUsername) setUsername(storedUsername);
+      } catch (err) {
+        setIsLoggedIn(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
 
   return (
     <View style={[styles.root, isDesktop ? styles.rowLayout : styles.columnLayout]}>
@@ -23,7 +51,23 @@ export default function WebLayout() {
           <NavLink href="/" label="Home" icon="home" isSidebar={isDesktop} />
           <NavLink href="/about" label="About" icon="info" isSidebar={isDesktop} />
           <NavLink href="/maps" label="Maps" icon="map" isSidebar={isDesktop} />
+          
+          {/* Settings link rendered only when logged in */}
+          {isLoggedIn && (
+            <NavLink href="/settings" label="Settings" icon="settings" isSidebar={isDesktop} />
+          )}
 
+          {/* Render Profile icon with Username when logged in, or Login link when logged out */}
+          {isLoggedIn ? (
+            <NavLink 
+              href="/settings" 
+              label={username || 'Profile'} 
+              icon="account-circle" 
+              isSidebar={isDesktop} 
+            />
+          ) : (
+            <NavLink href="/login" label="Login" icon="login" isSidebar={isDesktop} />
+          )}
         </View>
       </View>
 
@@ -35,7 +79,6 @@ export default function WebLayout() {
   );
 }
 
-// Update the NavLink component inside app/(tabs)/_layout.web.tsx
 function NavLink({ href, label, icon, isSidebar }: NavItemProps) {
   const pathname = usePathname();
   const isActive = pathname === href;
@@ -67,7 +110,6 @@ function NavLink({ href, label, icon, isSidebar }: NavItemProps) {
     </Link>
   );
 }
-
 
 const styles = StyleSheet.create({
   root: {

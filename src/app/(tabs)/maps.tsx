@@ -1,4 +1,6 @@
 import React, { Suspense, useState, useEffect } from 'react';
+import { Linking, Platform } from 'react-native';
+
 import {
   StyleSheet,
   View,
@@ -59,31 +61,31 @@ export default function OpenGisMapScreen() {
     return R * c;
   };
 
-  // Fetch nearby gas stations using OpenStreetMap Overpass API
-  const fetchNearbyGasStations = async (coords: LocationCoords) => {
+  const fetchNearbyStations = async (coords: LocationCoords, userVehicleType: 'gas' | 'ev' = 'gas') => {
     setLoadingStations(true);
     try {
-      // Query amenities tagged as 'fuel' within 5000m radius
-      const query = `[out:json];node["amenity"="fuel"](around:5000,${coords.latitude},${coords.longitude});out 10;`;
+      // Dynamically switch amenity tag based on user vehicle preference
+      const amenityTag = userVehicleType === 'ev' ? 'charging_station' : 'fuel';
+      const query = `[out:json];node["amenity"="${amenityTag}"](around:5000,${coords.latitude},${coords.longitude});out 10;`;
+      
       const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
       const data = await response.json();
 
       if (data && data.elements) {
-        const stations: GasStation[] = data.elements.map((item: any) => ({
+        const stations = data.elements.map((item: any) => ({
           id: item.id,
-          name: item.tags?.name || item.tags?.brand || 'Gas Station',
+          name: item.tags?.name || item.tags?.brand || (userVehicleType === 'ev' ? 'Charging Station' : 'Gas Station'),
           brand: item.tags?.brand,
           latitude: item.lat,
           longitude: item.lon,
           distanceKm: calculateDistance(coords.latitude, coords.longitude, item.lat, item.lon),
         }));
 
-        // Sort by closest distance
         stations.sort((a, b) => (a.distanceKm || 0) - (b.distanceKm || 0));
         setGasStations(stations);
       }
     } catch (err: any) {
-      console.warn('Failed to fetch gas stations:', err);
+      console.warn('Failed to fetch stations:', err);
     } finally {
       setLoadingStations(false);
     }
@@ -235,14 +237,24 @@ export default function OpenGisMapScreen() {
                 data={gasStations}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                  <View style={styles.stationItem}>
-                    <Text style={styles.stationName}>{item.name}</Text>
-                    <Text style={styles.stationDetails}>
-                      {item.distanceKm ? `${item.distanceKm.toFixed(2)} km away` : 'Nearby'}
-                    </Text>
+                  <View style={styles.stationItemContainer}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.stationName}>{item.name}</Text>
+                      <Text style={styles.stationDetails}>
+                        {item.distanceKm ? `${item.distanceKm.toFixed(2)} km away` : 'Nearby'}
+                      </Text>
+                    </View>
+                    
+                    {/* Navigation Trigger Button */}
+                    <TouchableOpacity 
+                      style={styles.navigateButton}
+                      onPress={() => navigateToStation(item.latitude, item.longitude, item.name)}
+                    >
+                      <Text style={styles.navigateButtonText}>Navigate</Text>
+                    </TouchableOpacity>
                   </View>
                 )}
-              />
+            />
             )}
           </View>
         )}
@@ -250,6 +262,36 @@ export default function OpenGisMapScreen() {
     </View>
   );
 }
+
+const navigateToStation = (latitude: number, longitude: number, stationName: string) => {
+  const destination = `${latitude},${longitude}`;
+  const label = encodeURIComponent(stationName);
+
+  let url = '';
+
+  if (Platform.OS === 'ios') {
+    // Opens Apple Maps with driving directions
+    url = `maps://app?daddr=${destination}&dirflg=d&t=m`;
+  } else if (Platform.OS === 'android') {
+    // Opens Google Maps Navigation intent on Android
+    url = `google.navigation:q=${destination}`;
+  } else {
+    // Fallback for Web browser view
+    url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&dir_action=navigate`;
+  }
+
+  Linking.canOpenURL(url)
+    .supported(supported => {
+      if (supported) {
+        return Linking.openURL(url);
+      } else {
+        // Fallback web url if native scheme fails
+        const fallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+        return Linking.openURL(fallbackUrl);
+      }
+    })
+    .catch((err) => console.error('An error occurred opening maps', err));
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -364,5 +406,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#86868b',
     marginTop: 2,
+  },
+  stationItemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f2',
+  },
+  navigateButton: {
+    backgroundColor: '#007aff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  navigateButtonText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

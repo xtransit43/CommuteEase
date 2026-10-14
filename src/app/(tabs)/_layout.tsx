@@ -1,88 +1,140 @@
 import React, { useEffect, useState } from 'react';
-import { Tabs } from "expo-router";
-import Ionicons from "@expo/vector-icons/Ionicons"; 
+import { Tabs, usePathname } from 'expo-router';
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function TabLayout() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const pathname = usePathname();
 
+  // Check auth session whenever pathname changes or on mount
   useEffect(() => {
-    const checkLoginStatus = async () => {
+    const checkUserSession = async () => {
       try {
-        const storedUserId = await SecureStore.getItemAsync('userId');
-        const storedUsername = await SecureStore.getItemAsync('username');
-        
-        setIsLoggedIn(!!storedUserId);
-        if (storedUsername) {
-          setUsername(storedUsername);
+        let storedUserId = null;
+        if (Platform.OS === 'web') {
+          storedUserId = localStorage.getItem('userId');
+        } else {
+          storedUserId = await SecureStore.getItemAsync('userId');
         }
-      } catch (e) {
-        setIsLoggedIn(false);
+        setIsLoggedIn(!!storedUserId);
+      } catch (err) {
+        console.warn('Error checking session state:', err);
       }
     };
 
-    checkLoginStatus();
-  }, []);
+    checkUserSession();
+  }, [pathname]);
 
   return (
-    <Tabs 
-      screenOptions = {{
-        tabBarActiveTintColor: '#ffd33d',
+    <Tabs
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#050505',
+        },
+        headerTintColor: '#ffffff',
+        headerTitleStyle: {
+          fontFamily: 'Comic Sans MS',
+          fontWeight: 'bold',
+          color: '#ffffff',
+        },
+        tabBarStyle: {
+          backgroundColor: '#121212',
+          borderTopColor: '#ff00ff',
+          borderTopWidth: 2,
+          height: 65,
+          paddingBottom: 10,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontFamily: 'Comic Sans MS',
+          fontSize: 12,
+          fontWeight: 'bold',
+        },
+        tabBarActiveTintColor: '#00ffff',
         tabBarInactiveTintColor: '#ffffff',
       }}
     >
-      <Tabs.Screen 
-        name="index" 
-        options={{ 
+      <Tabs.Screen
+        name="index"
+        options={{
           title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name = {focused ? 'home-sharp' : 'home-outline'} color = {color} size = {24}/>
-          ),
-        }}/>
-
-      <Tabs.Screen 
-        name="about" 
-        options={{ 
-          title: 'About',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name = {focused ? 'information-circle' : 'information-circle-outline'} color = {color} size = {24}/>
-          ),
-        }}/>
-
-      <Tabs.Screen 
-        name="maps" 
-        options={{ 
-          title: 'Maps',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name = {focused ? 'map' : 'map-outline'} color = {color} size = {24}/>
-          ),
-        }}/>
-
-      {/* Conditionally rendered Settings Tab */}
-      <Tabs.Screen 
-        name="settings" 
-        options={{ 
-          title: 'Settings',
-          href: isLoggedIn ? '/settings' : null,
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name = {focused ? 'settings' : 'settings-outline'} color = {color} size = {24}/>
-          ),
-        }}/>
-
-      {/* Dynamic Profile or Login Tab */}
-      <Tabs.Screen 
-        name="login" 
-        options={{ 
-          title: isLoggedIn ? (username || 'Profile') : 'Login',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons 
-              name={isLoggedIn ? (focused ? 'person-circle' : 'person-circle-outline') : (focused ? 'log-in' : 'log-in-outline')} 
-              color={color} 
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
               size={24}
+              color={color}
             />
           ),
-        }}/>
+        }}
+      />
+
+      <Tabs.Screen
+        name="maps"
+        options={{
+          title: 'Map',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? 'map' : 'map-outline'}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* Dynamic Tab 1: Switches between 'Login' and 'Profile' */}
+      <Tabs.Screen
+        name="login"
+        options={{
+          title: isLoggedIn ? 'Profile' : 'Login',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={
+                isLoggedIn
+                  ? focused ? 'person' : 'person-outline'
+                  : focused ? 'log-in' : 'log-in-outline'
+              }
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* Dynamic Tab 2: Dynamic Settings/Preferences Icon & Title */}
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: isLoggedIn ? 'Preferences' : 'Settings',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={
+                isLoggedIn
+                  ? focused ? 'options' : 'options-outline'
+                  : focused ? 'settings' : 'settings-outline'
+              }
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="about"
+        options={{
+          title: 'About',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? 'information-circle' : 'information-circle-outline'}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

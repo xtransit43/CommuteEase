@@ -1,41 +1,61 @@
-import { Text, View, StyleSheet } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, Text, ScrollView } from 'react-native';
 
 export default function AboutScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerText}>
-        About Our Mission:
-      </Text>
-      <Text style={styles.descriptionText}>
-        We are CommuteEase, a mobile and web app built with React Native and Expo Go. We are dedicated to helping ease the strain of long commutes for commuters.
-        {"\n\n"}
-        With a responsive navigation tab bar, this app provides an integrated OpenGIS map app that offers GPS tracking and truck stop information for commuters.
-      </Text>
-    </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.title}>About CommuteEase</Text>
+        <Text style={styles.text}>
+          CommuteEase is built with modern cross-platform technologies including Expo Router, Prisma, and PostgreSQL. It delivers real-time spatial positioning using the Overpass API, secure 2FA authentication, and vehicle profile customization.
+        </Text>
+        <Text style={styles.text}>
+          Whether you drive a gas-powered vehicle or an electric car, CommuteEase ensures you always find the closest station with high-contrast clarity!
+        </Text>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#25292e',
+    flexGrow: 1,
+    backgroundColor: '#050505',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'flex-start',
-    paddingHorizontal: 28,
-    paddingVertical: 32,
+    padding: 24,
   },
-  headerText: {
-    fontSize: 28,
-    fontWeight: '700',
+  card: {
+    backgroundColor: '#121212',
+    borderRadius: 24,
+    padding: 36,
+    width: '100%',
+    maxWidth: 600,
+    borderWidth: 2,
+    borderColor: '#00ffff',
+    shadowColor: '#00ffff',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  title: {
+    fontFamily: 'Comic Sans MS',
+    fontSize: 32,
+    fontWeight: 'bold',
     color: '#ffffff',
-    marginBottom: 16,
-    lineHeight: 36,
-    letterSpacing: 0.5,
+    textAlign: 'center',
+    marginBottom: 20,
+    textShadowColor: '#ff00ff',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
   },
-  descriptionText: {
-    fontSize: 18,
-    color: '#d1d1d6',
-    lineHeight: 28,
-    letterSpacing: 0.2,
+  text: {
+    fontFamily: 'Comic Sans MS',
+    fontSize: 16,
+    color: '#ffffff',
+    lineHeight: 26,
+    marginBottom: 16,
+    textAlign: 'center',
   },
 });

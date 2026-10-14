@@ -16,6 +16,7 @@ export default function WebLayout() {
   const isDesktop = width >= 768; // Desktop Breakpoint
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -39,7 +40,7 @@ export default function WebLayout() {
     };
 
     checkAuthStatus();
-  }, []);
+  }, [pathname]);
 
   return (
     <View style={[styles.root, isDesktop ? styles.rowLayout : styles.columnLayout]}>
@@ -52,12 +53,12 @@ export default function WebLayout() {
           <NavLink href="/about" label="About" icon="info" isSidebar={isDesktop} />
           <NavLink href="/maps" label="Maps" icon="map" isSidebar={isDesktop} />
           
-          {/* Settings link rendered only when logged in[cite: 4] */}
+          {/* Settings link rendered when logged in */}
           {isLoggedIn && (
             <NavLink href="/settings" label="Settings" icon="settings" isSidebar={isDesktop} />
           )}
 
-          {/* Render Profile icon with Username when logged in, or Login link when logged out[cite: 4] */}
+          {/* Render Profile icon with Username when logged in, or Login link when logged out */}
           {isLoggedIn ? (
             <NavLink 
               href="/settings" 
@@ -82,8 +83,8 @@ export default function WebLayout() {
 function NavLink({ href, label, icon, isSidebar }: NavItemProps) {
   const pathname = usePathname();
   const isActive = pathname === href;
-  const activeColor = '#007AFF';
-  const inactiveColor = '#666';
+  const activeColor = '#00ffff';
+  const inactiveColor = '#ffffff';
 
   return (
     <Link href={href} asChild>
@@ -102,7 +103,7 @@ function NavLink({ href, label, icon, isSidebar }: NavItemProps) {
         <Text style={[
           styles.labelText, 
           isSidebar ? styles.sidebarLabel : styles.tabLabel,
-          { color: isActive ? activeColor : inactiveColor, fontWeight: isActive ? '600' : '400' }
+          { color: isActive ? activeColor : inactiveColor, fontWeight: isActive ? 'bold' : 'normal' }
         ]}>
           {label}
         </Text>
@@ -114,7 +115,7 @@ function NavLink({ href, label, icon, isSidebar }: NavItemProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#050505',
   },
   rowLayout: {
     flexDirection: 'row',
@@ -125,48 +126,57 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     height: '100%',
+    backgroundColor: '#050505',
   },
   navbar: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#121212',
     borderStyle: 'solid',
-    borderColor: '#eaeaea',
+    borderColor: '#ff00ff',
   },
   sidebar: {
     width: 240,
     height: '100vh',
-    borderRightWidth: 1,
+    borderRightWidth: 2,
     paddingTop: 32,
     paddingHorizontal: 16,
   },
   logo: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontFamily: 'Comic Sans MS',
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 32,
     paddingLeft: 12,
-    color: '#111',
+    color: '#ffffff',
+    textShadowColor: '#00ffff',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
   },
   sidebarLinks: {
     flexDirection: 'column',
-    gap: 8,
+    gap: 12,
   },
   sidebarButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     width: '100%',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   activeSidebarButton: {
-    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+    backgroundColor: 'rgba(0, 255, 255, 0.12)',
+    borderColor: '#00ffff',
   },
   sidebarLabel: {
     fontSize: 16,
-    marginLeft: 16,
+    marginLeft: 14,
   },
   bottomTabs: {
     height: 65,
-    borderTopWidth: 1,
+    borderTopWidth: 2,
+    borderColor: '#ff00ff',
     justifyContent: 'center',
   },
   tabLinks: {
@@ -188,6 +198,6 @@ const styles = StyleSheet.create({
     cursor: 'pointer',
   },
   labelText: {
-    fontFamily: 'System',
+    fontFamily: 'Comic Sans MS',
   }
 });

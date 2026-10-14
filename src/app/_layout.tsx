@@ -1,5 +1,4 @@
-import { Tabs, Stack } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { Stack } from 'expo-router';
 
 export default function RootLayout() {
   return (
@@ -18,6 +17,9 @@ export default function RootLayout() {
           backgroundColor: '#050505',
         },
       }}
-    />
+    >
+      {/* Hide header for the tab group layout */}
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    </Stack>
   );
 }

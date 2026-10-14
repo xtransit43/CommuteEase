@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -12,12 +12,46 @@ import {
   ScrollView
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    checkStatus();
+  }, []);
+
+  const checkStatus = async () => {
+    try {
+      let storedUserId = null;
+      let storedUsername = null;
+
+      if (Platform.OS === 'web') {
+        storedUserId = localStorage.getItem('userId');
+        storedUsername = localStorage.getItem('username');
+      } else {
+        storedUserId = await SecureStore.getItemAsync('userId');
+        storedUsername = await SecureStore.getItemAsync('username');
+      }
+
+      if (storedUserId) {
+        setIsLoggedIn(true);
+        setUsername(storedUsername);
+      } else {
+        setIsLoggedIn(false);
+      }
+    } catch (err) {
+      setIsLoggedIn(false);
+    } finally {
+      setCheckingAuth(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -40,29 +74,58 @@ export default function LoginScreen() {
         throw new Error(data.error || 'Failed to sign in.');
       }
 
-      // Check if 2FA is required based on Phase 2 / Phase 4 roadmap steps
       if (data.requires2FA) {
-        router.push({
-          pathname: '/2fa-verify',
-          params: { email },
-        });
+        router.push({ pathname: '/2fa-verify', params: { email } });
         return;
       }
+
       if (data.user?.id) {
-        await SecureStore.setItemAsync('userId', data.user.id);
-        if (data.user.username) {
-          await SecureStore.setItemAsync('username', data.user.username);
+        if (Platform.OS === 'web') {
+          localStorage.setItem('userId', data.user.id);
+          if (data.user.username) localStorage.setItem('username', data.user.username);
+        } else {
+          await SecureStore.setItemAsync('userId', data.user.id);
+          if (data.user.username) await SecureStore.setItemAsync('username', data.user.username);
         }
       }
 
       Alert.alert('Success', 'Logged in successfully!');
-      router.push('/'); // Navigate back to home or maps screen
+      setIsLoggedIn(true);
+      if (data.user?.username) setUsername(data.user.username);
+      router.push('/');
     } catch (err: any) {
       Alert.alert('Login Failed', err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleLogout = async () => {
+    try {
+      if (Platform.OS === 'web') {
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+      } else {
+        await SecureStore.deleteItemAsync('userId');
+        await SecureStore.deleteItemAsync('username');
+      }
+      setIsLoggedIn(false);
+      setUsername(null);
+      setEmail('');
+      setPassword('');
+      Alert.alert('Logged Out', 'You have been successfully logged out.');
+    } catch (err) {
+      Alert.alert('Error', 'Failed to log out cleanly.');
+    }
+  };
+
+  if (checkingAuth) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView 
@@ -72,52 +135,66 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.headerContainer}>
           <Text style={styles.title}>CommuteEase</Text>
-          <Text style={styles.subtitle}>Welcome back! Log in to your account.</Text>
+          <Text style={styles.subtitle}>
+            {isLoggedIn ? `Welcome back, ${username || 'Commuter'}!` : 'Welcome back! Log in to your account.'}
+          </Text>
         </View>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>Email Address</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="name@example.com"
-            placeholderTextColor="#64748b"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-          />
+        {isLoggedIn ? (
+          <View style={styles.formContainer}>
+            <View style={styles.logoutCard}>
+              <Text style={styles.loggedInText}>You are currently logged in.</Text>
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Text style={styles.buttonText}>Log Out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.formContainer}>
+            <Text style={styles.label}>Email Address</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="name@example.com"
+              placeholderTextColor="#64748b"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
 
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your password"
-            placeholderTextColor="#64748b"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your password"
+              placeholderTextColor="#64748b"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
 
-          <TouchableOpacity 
-            style={[styles.button, loading && styles.buttonDisabled]} 
-            onPress={handleLogin} 
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonText}>Log In</Text>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.button, loading && styles.buttonDisabled]} 
+              onPress={handleLogin} 
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.buttonText}>Log In</Text>
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.signupLinkContainer} 
-            onPress={() => router.push('/signup')}
-          >
-            <Text style={styles.signupText}>
-              Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
+            {/* Link to sign up if user doesn't have an account */}
+            <TouchableOpacity 
+              style={styles.signupLinkContainer} 
+              onPress={() => router.push('/signup')}
+            >
+              <Text style={styles.signupText}>
+                Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -127,6 +204,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f172a',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContainer: {
     flexGrow: 1,
@@ -146,6 +227,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     color: '#94a3b8',
+    textAlign: 'center',
   },
   formContainer: {
     width: '100%',
@@ -173,11 +255,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 12,
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
   },
   buttonDisabled: {
     backgroundColor: '#1d4ed8',
@@ -188,16 +265,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  linkContainer: {
+  signupLinkContainer: {
     marginTop: 20,
     alignItems: 'center',
   },
-  linkText: {
+  signupText: {
     color: '#94a3b8',
     fontSize: 14,
   },
-  linkBold: {
+  signupTextBold: {
     color: '#3b82f6',
     fontWeight: '600',
+  },
+  logoutCard: {
+    backgroundColor: '#1e293b',
+    padding: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  loggedInText: {
+    color: '#cbd5e1',
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  logoutButton: {
+    backgroundColor: '#ef4444',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 10,
+    width: '100%',
+    alignItems: 'center',
   },
 });

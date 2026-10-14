@@ -12,6 +12,7 @@ import {
   ScrollView
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
 export default function SignupScreen() {
   const [username, setUsername] = useState('');
@@ -21,7 +22,6 @@ export default function SignupScreen() {
   const router = useRouter();
 
   const handleRegister = async () => {
-    // Client-side quick validation check
     if (!username || !email || !password) {
       Alert.alert('Error', 'Please fill out all required fields.');
       return;
@@ -46,15 +46,19 @@ export default function SignupScreen() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create account.');
       }
+
       if (data.user?.id) {
-        await SecureStore.setItemAsync('userId', data.user.id);
-        if (data.user.username) {
-          await SecureStore.setItemAsync('username', data.user.username);
+        if (Platform.OS === 'web') {
+          localStorage.setItem('userId', data.user.id);
+          if (data.user.username) localStorage.setItem('username', data.user.username);
+        } else {
+          await SecureStore.setItemAsync('userId', data.user.id);
+          if (data.user.username) await SecureStore.setItemAsync('username', data.user.username);
         }
       }
 
       Alert.alert('Success', 'Account has been created successfully!');
-      router.push('/login'); // Or route directly to your map screen
+      router.push('/login');
     } catch (err: any) {
       Alert.alert('Registration Failed', err.message);
     } finally {
@@ -116,6 +120,16 @@ export default function SignupScreen() {
               <Text style={styles.buttonText}>Sign Up</Text>
             )}
           </TouchableOpacity>
+
+          {/* Link to login if user already has an account */}
+          <TouchableOpacity 
+            style={styles.loginLinkContainer} 
+            onPress={() => router.push('/login')}
+          >
+            <Text style={styles.loginText}>
+              Already have an account? <Text style={styles.loginTextBold}>Log In</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -172,11 +186,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 12,
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
   },
   buttonDisabled: {
     backgroundColor: '#1d4ed8',
@@ -185,6 +194,18 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#ffffff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  loginLinkContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  loginText: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  loginTextBold: {
+    color: '#3b82f6',
     fontWeight: '600',
   },
 });

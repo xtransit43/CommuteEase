@@ -1,6 +1,4 @@
 import React, { Suspense, useState, useEffect } from 'react';
-import { Linking, Platform } from 'react-native';
-
 import {
   StyleSheet,
   View,
@@ -10,6 +8,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   FlatList,
+  Linking,
 } from 'react-native';
 
 // Safely lazy-load native map only on non-web platforms
@@ -113,7 +112,7 @@ export default function OpenGisMapScreen() {
           };
           setLocation(newCoords);
           setErrorMsg(null);
-          fetchNearbyGasStations(newCoords);
+          fetchNearbyStations(newCoords);
         },
         (error) => setErrorMsg(error.message),
         { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
@@ -141,7 +140,7 @@ export default function OpenGisMapScreen() {
               };
               setLocation(newCoords);
               setErrorMsg(null);
-              fetchNearbyGasStations(newCoords);
+              fetchNearbyStations(newCoords); // Fixed: aligned with unified fetchNearbyStations function
             }
           );
         } catch (err: any) {
@@ -254,7 +253,7 @@ export default function OpenGisMapScreen() {
                     </TouchableOpacity>
                   </View>
                 )}
-            />
+              />
             )}
           </View>
         )}
@@ -265,27 +264,22 @@ export default function OpenGisMapScreen() {
 
 const navigateToStation = (latitude: number, longitude: number, stationName: string) => {
   const destination = `${latitude},${longitude}`;
-  const label = encodeURIComponent(stationName);
 
   let url = '';
 
   if (Platform.OS === 'ios') {
-    // Opens Apple Maps with driving directions
     url = `maps://app?daddr=${destination}&dirflg=d&t=m`;
   } else if (Platform.OS === 'android') {
-    // Opens Google Maps Navigation intent on Android
     url = `google.navigation:q=${destination}`;
   } else {
-    // Fallback for Web browser view
     url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&dir_action=navigate`;
   }
 
   Linking.canOpenURL(url)
-    .supported(supported => {
+    .then((supported) => {
       if (supported) {
         return Linking.openURL(url);
       } else {
-        // Fallback web url if native scheme fails
         const fallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
         return Linking.openURL(fallbackUrl);
       }
@@ -366,64 +360,4 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#e5e5ea',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stationsCard: {
-    maxHeight: 200,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e5e5ea',
-  },
-  stationsHeader: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1d1d1f',
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 13,
-    color: '#86868b',
-    marginTop: 8,
-  },
-  stationItem: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f2',
-  },
-  stationName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1d1d1f',
-  },
-  stationDetails: {
-    fontSize: 12,
-    color: '#86868b',
-    marginTop: 2,
-  },
-  stationItemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f2',
-  },
-  navigateButton: {
-    backgroundColor: '#007aff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  navigateButtonText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-});
+    borderColor: '#e5e

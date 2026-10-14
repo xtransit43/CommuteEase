@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
   const [vehicleType, setVehicleType] = useState<'gas' | 'ev'>('gas');
+  const [vehicleMake, setVehicleMake] = useState('');
+  const [vehicleModel, setVehicleModel] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -14,9 +16,13 @@ export default function SettingsScreen() {
   useEffect(() => {
     const loadSessionAndPreferences = async () => {
       try {
-        const storedUserId = await SecureStore.getItemAsync('userId');
+        let storedUserId = null;
+        if (Platform.OS === 'web') {
+          storedUserId = localStorage.getItem('userId');
+        } else {
+          storedUserId = await SecureStore.getItemAsync('userId');
+        }
         
-        // If not logged in, stop loading and leave userId as null to display login prompt
         if (!storedUserId) {
           setFetching(false);
           return;
@@ -24,12 +30,14 @@ export default function SettingsScreen() {
 
         setUserId(storedUserId);
 
-        // Fetch user preferences using stored ID
-        const response = await fetch(`/api/user/preferences?userId=${storedUserId}`);
+        // Updated path to match /api/preferences
+        const response = await fetch(`/api/preferences?userId=${storedUserId}`);
         const data = await response.json();
 
-        if (response.ok && data.user?.vehicleType) {
-          setVehicleType(data.user.vehicleType);
+        if (response.ok && data.user) {
+          if (data.user.vehicleType) setVehicleType(data.user.vehicleType);
+          if (data.user.vehicleMake) setVehicleMake(data.user.vehicleMake);
+          if (data.user.vehicleModel) setVehicleModel(data.user.vehicleModel);
         }
       } catch (err) {
         console.warn('Failed to load session or preferences:', err);
@@ -41,23 +49,31 @@ export default function SettingsScreen() {
     loadSessionAndPreferences();
   }, []);
 
-  const handleSavePreferences = async (selectedType: 'gas' | 'ev') => {
+  const handleSavePreferences = async (selectedType?: 'gas' | 'ev') => {
     if (!userId) return;
 
-    setVehicleType(selectedType);
+    const typeToSave = selectedType || vehicleType;
+    if (selectedType) setVehicleType(selectedType);
+
     setLoading(true);
 
     try {
-      const response = await fetch('/api/user/preferences', {
+      // Updated path to match /api/preferences
+      const response = await fetch('/api/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, vehicleType: selectedType }),
+        body: JSON.stringify({ 
+          userId, 
+          vehicleType: typeToSave,
+          vehicleMake,
+          vehicleModel
+        }),
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to update preferences');
 
-      Alert.alert('Success', `Vehicle preference updated to ${selectedType.toUpperCase()}`);
+      Alert.alert('Success', 'Commuter preferences updated successfully!');
     } catch (err: any) {
       Alert.alert('Error', err.message);
     } finally {
@@ -65,16 +81,14 @@ export default function SettingsScreen() {
     }
   };
 
-  // 1. Loading Indicator State
   if (fetching) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color="#007aff" />
       </View>
     );
   }
 
-  // 2. Unauthenticated View: Display Login Prompt
   if (!userId) {
     return (
       <View style={styles.container}>
@@ -94,12 +108,32 @@ export default function SettingsScreen() {
     );
   }
 
-  // 3. Authenticated View: Settings Controls
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
       <Text style={styles.title}>Commuter Settings</Text>
-      <Text style={styles.subtitle}>Select your primary vehicle type for dynamic map routing:</Text>
+      <Text style={styles.subtitle}>Configure your primary vehicle details for optimized map routing:</Text>
 
+      <View style={styles.section}>
+        <Text style={styles.label}>Vehicle Make</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g. Toyota, Tesla, Ford"
+          placeholderTextColor="#64748b"
+          value={vehicleMake}
+          onChangeText={setVehicleMake}
+        />
+
+        <Text style={styles.label}>Vehicle Model</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g. Prius, Model 3, F-150"
+          placeholderTextColor="#64748b"
+          value={vehicleModel}
+          onChangeText={setVehicleModel}
+        />
+      </View>
+
+      <Text style={styles.label}>Powertrain Type</Text>
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={[styles.optionButton, vehicleType === 'gas' && styles.activeGas]}
@@ -116,14 +150,34 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
-      {loading && <ActivityIndicator size="small" color="#007aff" style={{ marginTop: 20 }} />}
-    </View>
+      <TouchableOpacity 
+        style={styles.saveButton} 
+        onPress={() => handleSavePreferences()}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#ffffff" />
+        ) : (
+          <Text style={styles.saveButtonText}>Save Vehicle Details</Text>
+        )}
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
+    backgroundColor: '#0f172a', 
+    padding: 24, 
+    justifyContent: 'center' 
+  },
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollContainer: { 
+    flexGrow: 1, 
     backgroundColor: '#0f172a', 
     padding: 24, 
     justifyContent: 'center' 
@@ -138,14 +192,37 @@ const styles = StyleSheet.create({
   subtitle: { 
     fontSize: 14, 
     color: '#94a3b8', 
-    marginBottom: 32, 
+    marginBottom: 24, 
     textAlign: 'center' 
   },
+  section: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#cbd5e1',
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: '#1e293b',
+    color: '#ffffff',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
+    fontSize: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
   buttonContainer: { 
-    gap: 16 
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
   },
   optionButton: { 
-    padding: 20, 
+    flex: 1,
+    padding: 16, 
     borderRadius: 12, 
     backgroundColor: '#1e293b', 
     borderWidth: 1, 
@@ -161,11 +238,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.1)' 
   },
   optionText: { 
-    fontSize: 18, 
+    fontSize: 15, 
     fontWeight: '600', 
     color: '#fff' 
   },
-  /* Unauthenticated Prompt Styles */
+  saveButton: {
+    backgroundColor: '#2563eb',
+    paddingVertical: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  saveButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   unauthCard: {
     backgroundColor: '#1e293b',
     borderRadius: 16,

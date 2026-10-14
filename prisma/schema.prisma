@@ -14,13 +14,14 @@ datasource db {
 }
 
 model User {
-  id                 String   @id @default(cuid())
-  username           String   @unique
+  id                 String   @id @default(uuid())
   email              String   @unique
+  username           String   @unique
   password           String
-  vehicleType        String   @default("gas") // "gas" or "ev"
-  twoFactorSecret    String?
+  vehicleType        String?  // 'gas' or 'ev'
+  vehicleMake        String?  // Added field
+  vehicleModel       String?  // Added field
   isTwoFactorEnabled Boolean  @default(false)
+  twoFactorSecret    String?
   createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
 }

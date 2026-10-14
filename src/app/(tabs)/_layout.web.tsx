@@ -52,12 +52,12 @@ export default function WebLayout() {
           <NavLink href="/about" label="About" icon="info" isSidebar={isDesktop} />
           <NavLink href="/maps" label="Maps" icon="map" isSidebar={isDesktop} />
           
-          {/* Settings link rendered only when logged in */}
+          {/* Settings link rendered only when logged in[cite: 4] */}
           {isLoggedIn && (
             <NavLink href="/settings" label="Settings" icon="settings" isSidebar={isDesktop} />
           )}
 
-          {/* Render Profile icon with Username when logged in, or Login link when logged out */}
+          {/* Render Profile icon with Username when logged in, or Login link when logged out[cite: 4] */}
           {isLoggedIn ? (
             <NavLink 
               href="/settings" 

@@ -2,10 +2,24 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 
-export default function OpenGisMap() {
+interface GasStation {
+  id: number;
+  name: string;
+  brand?: string;
+  latitude: number;
+  longitude: number;
+  distanceKm?: number;
+}
+
+interface OpenGisMapProps {
+  location?: { latitude: number; longitude: number } | null;
+  gasStations?: GasStation[];
+}
+
+export default function OpenGisMap({ location, gasStations = [] }: OpenGisMapProps) {
   const initialRegion = {
-    latitude: 51.4769,
-    longitude: 0.0000,
+    latitude: location?.latitude || 51.4769,
+    longitude: location?.longitude || 0.0000,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   };
@@ -15,15 +29,31 @@ export default function OpenGisMap() {
       <MapView
         provider={PROVIDER_DEFAULT}
         style={styles.map}
-        initialRegion={initialRegion}
+        region={
+          location
+            ? {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }
+            : initialRegion
+        }
         showsUserLocation={true}
         showsMyLocationButton={true}
       >
-        <Marker
-          coordinate={{ latitude: 51.4769, longitude: 0.0000 }}
-          title="OpenGIS Anchor"
-          description="Vector layer coordinate center point"
-        />
+        {/* Render markers for nearby gas/charging stations */}
+        {gasStations.map((station) => (
+          <Marker
+            key={station.id}
+            coordinate={{
+              latitude: station.latitude,
+              longitude: station.longitude,
+            }}
+            title={station.name}
+            description={station.brand ? `Brand: ${station.brand}` : 'Nearby Station'}
+          />
+        ))}
       </MapView>
     </View>
   );

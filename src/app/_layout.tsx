@@ -4,6 +4,8 @@ export default function RootLayout() {
   return (
     <Stack
       screenOptions={{
+        title: 'CommuteEase',
+        headerTitle: 'CommuteEase',
         headerStyle: {
           backgroundColor: '#050505',
         },
@@ -18,7 +20,7 @@ export default function RootLayout() {
         },
       }}
     >
-      {/* Hide header for the tab group layout */}
+      {/* Hide stack header for tab navigation so tab headers/WebLayout take over */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
     </Stack>
   );

@@ -20,7 +20,7 @@ export default function TwoFactorVerifyScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const email = params.email as string;
-  const userId = params.userId as string; // Optional if passed directly
+  const userId = params.userId as string;
 
   const handleVerify2FA = async () => {
     if (!token || token.length !== 6) {
@@ -31,7 +31,6 @@ export default function TwoFactorVerifyScreen() {
     setLoading(true);
 
     try {
-      // Calls your verify+api.ts endpoint
       const response = await fetch('/api/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,7 +43,6 @@ export default function TwoFactorVerifyScreen() {
         throw new Error(data.error || 'Invalid verification code.');
       }
 
-      // If user session data or ID is returned upon successful verification
       if (data.user?.id) {
         if (Platform.OS === 'web') {
           localStorage.setItem('userId', data.user.id);
@@ -56,7 +54,7 @@ export default function TwoFactorVerifyScreen() {
       }
 
       Alert.alert('Success', '2FA verified successfully!');
-      router.replace('/'); // Navigate to home screen
+      router.replace('/');
     } catch (err: any) {
       Alert.alert('Verification Failed', err.message);
     } finally {
@@ -71,18 +69,18 @@ export default function TwoFactorVerifyScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.headerContainer}>
-          <Text style={styles.title}>Two-Factor Authentication</Text>
+          <Text style={styles.title}>$ 2fa --verify</Text>
           <Text style={styles.subtitle}>
-            Enter the 6-digit code from your authenticator app{email ? ` for ${email}` : ''}.
+            Enter 6-digit TOTP key{email ? ` for ${email}` : ''}.
           </Text>
         </View>
 
         <View style={styles.formContainer}>
-          <Text style={styles.label}>Verification Code</Text>
+          <Text style={styles.label}>TOTP TOKEN</Text>
           <TextInput
             style={styles.input}
-            placeholder="123456"
-            placeholderTextColor="#64748b"
+            placeholder="000000"
+            placeholderTextColor="#005500"
             keyboardType="number-pad"
             maxLength={6}
             value={token}
@@ -95,9 +93,9 @@ export default function TwoFactorVerifyScreen() {
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#ffffff" />
+              <ActivityIndicator color="#000000" />
             ) : (
-              <Text style={styles.buttonText}>Verify Code</Text>
+              <Text style={styles.buttonText}>Confirm Key</Text>
             )}
           </TouchableOpacity>
 
@@ -106,7 +104,7 @@ export default function TwoFactorVerifyScreen() {
             onPress={() => router.push('/login')}
           >
             <Text style={styles.backText}>
-              Back to <Text style={styles.backTextBold}>Log In</Text>
+              Return to <Text style={styles.backTextBold}>Log In</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -118,65 +116,79 @@ export default function TwoFactorVerifyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#000000',
   },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
+    maxWidth: 450,
+    alignSelf: 'center',
+    width: '100%',
   },
   headerContainer: {
-    marginBottom: 32,
+    marginBottom: 24,
     alignItems: 'center',
   },
   title: {
-    fontSize: 28,
+    fontFamily: 'Comic Sans MS',
+    fontSize: 26,
     fontWeight: '700',
-    color: '#ffffff',
+    color: '#00ff00',
     marginBottom: 8,
     textAlign: 'center',
+    textShadowColor: '#00ff00',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   subtitle: {
-    fontSize: 15,
-    color: '#94a3b8',
+    fontFamily: 'Comic Sans MS',
+    fontSize: 14,
+    color: '#00cc00',
     textAlign: 'center',
-    paddingHorizontal: 16,
   },
   formContainer: {
     width: '100%',
+    backgroundColor: '#030d03',
+    padding: 24,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#00ff00',
   },
   label: {
-    fontSize: 14,
+    fontFamily: 'Comic Sans MS',
+    fontSize: 13,
     fontWeight: '600',
-    color: '#cbd5e1',
+    color: '#00ff00',
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#1e293b',
-    color: '#ffffff',
+    fontFamily: 'Comic Sans MS',
+    backgroundColor: '#000000',
+    color: '#00ff00',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 8,
     fontSize: 20,
-    letterSpacing: 4,
+    letterSpacing: 6,
     textAlign: 'center',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#008800',
   },
   button: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#00ff00',
     paddingVertical: 16,
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 8,
   },
   buttonDisabled: {
-    backgroundColor: '#1d4ed8',
     opacity: 0.7,
   },
   buttonText: {
-    color: '#ffffff',
+    fontFamily: 'Comic Sans MS',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -185,11 +197,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backText: {
-    color: '#94a3b8',
+    fontFamily: 'Comic Sans MS',
+    color: '#00aa00',
     fontSize: 14,
   },
   backTextBold: {
-    color: '#3b82f6',
+    fontFamily: 'Comic Sans MS',
+    color: '#00ff00',
     fontWeight: '600',
   },
 });

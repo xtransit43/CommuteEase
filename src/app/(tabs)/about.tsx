@@ -5,12 +5,12 @@ export default function AboutScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>About CommuteEase</Text>
+        <Text style={styles.title}>$ man commute-ease</Text>
         <Text style={styles.text}>
-          CommuteEase is built with modern cross-platform technologies including Expo Router, Prisma, and PostgreSQL. It delivers real-time spatial positioning using the Overpass API, secure 2FA authentication, and vehicle profile customization.
+          CommuteEase is engineered with modern cross-platform tech including Expo Router, Prisma, and PostgreSQL. It executes real-time spatial positioning via the Overpass API, secure 2FA authentication, and custom vehicle profiles.
         </Text>
         <Text style={styles.text}>
-          Whether you drive a gas-powered vehicle or an electric car, CommuteEase ensures you always find the closest station with high-contrast clarity!
+          Whether operating a gas powertrain or an electric vehicle node, CommuteEase ensures secure navigation with high-contrast terminal clarity!
         </Text>
       </View>
     </ScrollView>
@@ -20,40 +20,39 @@ export default function AboutScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#050505',
+    backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
   card: {
-    backgroundColor: '#121212',
-    borderRadius: 24,
+    backgroundColor: '#030d03',
+    borderRadius: 16,
     padding: 36,
     width: '100%',
     maxWidth: 600,
     borderWidth: 2,
-    borderColor: '#00ffff',
-    shadowColor: '#00ffff',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
+    borderColor: '#00ff00',
+    shadowColor: '#00ff00',
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 15,
     elevation: 10,
   },
   title: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#00ff00',
     textAlign: 'center',
     marginBottom: 20,
-    textShadowColor: '#ff00ff',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
+    textShadowColor: '#00ff00',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   text: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 16,
-    color: '#ffffff',
+    fontSize: 15,
+    color: '#00cc00',
     lineHeight: 26,
     marginBottom: 16,
     textAlign: 'center',

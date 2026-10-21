@@ -13,7 +13,7 @@ type NavItemProps = {
 
 export default function WebLayout() {
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 768; // Desktop Breakpoint
+  const isDesktop = width >= 768;
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const pathname = usePathname();
@@ -44,21 +44,18 @@ export default function WebLayout() {
 
   return (
     <View style={[styles.root, isDesktop ? styles.rowLayout : styles.columnLayout]}>
-      {/* Dynamic Responsive Navbar */}
       <View style={[styles.navbar, isDesktop ? styles.sidebar : styles.bottomTabs]}>
-        {isDesktop && <Text style={styles.logo}>CommuteEase</Text>}
+        {isDesktop && <Text style={styles.logo}>root@commute-ease:~#</Text>}
 
         <View style={isDesktop ? styles.sidebarLinks : styles.tabLinks}>
           <NavLink href="/" label="Home" icon="home" isSidebar={isDesktop} />
           <NavLink href="/about" label="About" icon="info" isSidebar={isDesktop} />
           <NavLink href="/maps" label="Maps" icon="map" isSidebar={isDesktop} />
           
-          {/* Settings link rendered when logged in */}
           {isLoggedIn && (
             <NavLink href="/settings" label="Settings" icon="settings" isSidebar={isDesktop} />
           )}
 
-          {/* Render Profile icon with Username when logged in, or Login link when logged out */}
           {isLoggedIn ? (
             <NavLink 
               href="/settings" 
@@ -72,7 +69,6 @@ export default function WebLayout() {
         </View>
       </View>
 
-      {/* Screen Views Injection Slot */}
       <View style={styles.contentContainer}>
         <Slot />
       </View>
@@ -83,8 +79,8 @@ export default function WebLayout() {
 function NavLink({ href, label, icon, isSidebar }: NavItemProps) {
   const pathname = usePathname();
   const isActive = pathname === href;
-  const activeColor = '#00ffff';
-  const inactiveColor = '#ffffff';
+  const activeColor = '#00ff00';
+  const inactiveColor = '#008800';
 
   return (
     <Link href={href} asChild>
@@ -115,7 +111,7 @@ function NavLink({ href, label, icon, isSidebar }: NavItemProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#050505',
+    backgroundColor: '#000000',
   },
   rowLayout: {
     flexDirection: 'row',
@@ -126,15 +122,15 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     height: '100%',
-    backgroundColor: '#050505',
+    backgroundColor: '#000000',
   },
   navbar: {
-    backgroundColor: '#121212',
+    backgroundColor: '#050a05',
     borderStyle: 'solid',
-    borderColor: '#ff00ff',
+    borderColor: '#00ff00',
   },
   sidebar: {
-    width: 240,
+    width: 260,
     height: '100vh',
     borderRightWidth: 2,
     paddingTop: 32,
@@ -142,14 +138,14 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 32,
-    paddingLeft: 12,
-    color: '#ffffff',
-    textShadowColor: '#00ffff',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
+    paddingLeft: 4,
+    color: '#00ff00',
+    textShadowColor: '#00ff00',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   sidebarLinks: {
     flexDirection: 'column',
@@ -160,23 +156,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: 8,
     width: '100%',
     borderWidth: 1,
     borderColor: 'transparent',
   },
   activeSidebarButton: {
-    backgroundColor: 'rgba(0, 255, 255, 0.12)',
-    borderColor: '#00ffff',
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+    borderColor: '#00ff00',
   },
   sidebarLabel: {
-    fontSize: 16,
+    fontSize: 15,
     marginLeft: 14,
   },
   bottomTabs: {
     height: 65,
     borderTopWidth: 2,
-    borderColor: '#ff00ff',
+    borderColor: '#00ff00',
     justifyContent: 'center',
   },
   tabLinks: {

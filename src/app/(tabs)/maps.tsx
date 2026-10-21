@@ -11,7 +11,6 @@ import {
   Linking,
 } from 'react-native';
 
-// Safely lazy-load native map only on non-web platforms
 const NativeMapMobile = Platform.OS !== 'web'
   ? React.lazy(() => import('../../components/OpenGisMap'))
   : null;
@@ -40,14 +39,12 @@ export default function OpenGisMapScreen() {
   const [gasStations, setGasStations] = useState<GasStation[]>([]);
   const [loadingStations, setLoadingStations] = useState<boolean>(false);
 
-  // Toggle GPS Tracking
   const toggleTracking = () => {
     setTracking((prev) => !prev);
   };
 
-  // Helper to calculate distance in KM between two coordinates
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // Radius of the Earth in km
+    const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
     const a =
@@ -63,7 +60,6 @@ export default function OpenGisMapScreen() {
   const fetchNearbyStations = async (coords: LocationCoords, userVehicleType: 'gas' | 'ev' = 'gas') => {
     setLoadingStations(true);
     try {
-      // Dynamically switch amenity tag based on user vehicle preference
       const amenityTag = userVehicleType === 'ev' ? 'charging_station' : 'fuel';
       const query = `[out:json];node["amenity"="${amenityTag}"](around:5000,${coords.latitude},${coords.longitude});out 10;`;
       
@@ -100,7 +96,7 @@ export default function OpenGisMapScreen() {
 
     if (Platform.OS === 'web') {
       if (!('geolocation' in navigator)) {
-        setErrorMsg('Geolocation is not supported by this browser.');
+        setErrorMsg('Geolocation not supported by browser.');
         return;
       }
 
@@ -123,7 +119,7 @@ export default function OpenGisMapScreen() {
           const Location = await import('expo-location');
           const { status } = await Location.requestForegroundPermissionsAsync();
           if (status !== 'granted') {
-            setErrorMsg('Permission to access location was denied');
+            setErrorMsg('Location permission denied');
             return;
           }
 
@@ -140,7 +136,7 @@ export default function OpenGisMapScreen() {
               };
               setLocation(newCoords);
               setErrorMsg(null);
-              fetchNearbyStations(newCoords); // Fixed: aligned with unified fetchNearbyStations function
+              fetchNearbyStations(newCoords);
             }
           );
         } catch (err: any) {
@@ -158,7 +154,6 @@ export default function OpenGisMapScreen() {
     };
   }, [tracking]);
 
-  // Construct dynamic Web Embed URL centered on coordinates
   const webMapUrl = location
     ? `https://www.openstreetmap.org/export/embed.html?bbox=${location.longitude - 0.02}%2C${location.latitude - 0.02}%2C${location.longitude + 0.02}%2C${location.latitude + 0.02}&layer=mapnik&marker=${location.latitude}%2C${location.longitude}`
     : 'https://www.openstreetmap.org/export/embed.html';
@@ -168,27 +163,26 @@ export default function OpenGisMapScreen() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.title}>OpenGIS Layer Map</Text>
-            <Text style={styles.subtitle}>Unified cross-platform geo-spatial tracking.</Text>
+            <Text style={styles.title}>$ ./gis-scanner</Text>
+            <Text style={styles.subtitle}>Real-time geospatial telemetry feed.</Text>
           </View>
           <TouchableOpacity
             style={[styles.trackButton, tracking ? styles.buttonActive : styles.buttonInactive]}
             onPress={toggleTracking}
           >
             <Text style={styles.buttonText}>
-              {tracking ? 'Stop GPS Tracking' : 'Start GPS Tracking'}
+              {tracking ? '■ Stop Telemetry' : '▶ Initialize GPS'}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Status indicator bar */}
         <View style={styles.statusBar}>
           <Text style={styles.statusText}>
             {tracking
               ? location
-                ? `GPS Active: Lat ${location.latitude.toFixed(4)}, Lng ${location.longitude.toFixed(4)}`
-                : 'Acquiring GPS location...'
-              : 'GPS Tracking Off'}
+                ? `GRID LOCK: Lat ${location.latitude.toFixed(4)}, Lng ${location.longitude.toFixed(4)}`
+                : 'Acquiring satellite uplink...'
+              : 'TELEMETRY OFFLINE'}
           </Text>
           {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
         </View>
@@ -212,7 +206,7 @@ export default function OpenGisMapScreen() {
             <Suspense
               fallback={
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color="#007aff" />
+                  <ActivityIndicator size="large" color="#00ff00" />
                 </View>
               }
             >
@@ -223,14 +217,13 @@ export default function OpenGisMapScreen() {
           )}
         </View>
 
-        {/* Nearby Gas Stations List Drawer */}
         {tracking && (
           <View style={styles.stationsCard}>
-            <Text style={styles.stationsHeader}>Nearby Gas Stations</Text>
+            <Text style={styles.stationsHeader}>// TARGET NODES WITHIN 5KM</Text>
             {loadingStations ? (
-              <ActivityIndicator size="small" color="#007aff" style={{ marginTop: 12 }} />
+              <ActivityIndicator size="small" color="#00ff00" style={{ marginTop: 12 }} />
             ) : gasStations.length === 0 ? (
-              <Text style={styles.emptyText}>No gas stations found within 5 km.</Text>
+              <Text style={styles.emptyText}>No service nodes detected in range.</Text>
             ) : (
               <FlatList
                 data={gasStations}
@@ -240,16 +233,15 @@ export default function OpenGisMapScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.stationName}>{item.name}</Text>
                       <Text style={styles.stationDetails}>
-                        {item.distanceKm ? `${item.distanceKm.toFixed(2)} km away` : 'Nearby'}
+                        {item.distanceKm ? `Dist: ${item.distanceKm.toFixed(2)} km` : 'In proximity'}
                       </Text>
                     </View>
                     
-                    {/* Navigation Trigger Button */}
                     <TouchableOpacity 
                       style={styles.navigateButton}
                       onPress={() => navigateToStation(item.latitude, item.longitude, item.name)}
                     >
-                      <Text style={styles.navigateButtonText}>Navigate</Text>
+                      <Text style={styles.navigateButtonText}>Route Vector</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -264,7 +256,6 @@ export default function OpenGisMapScreen() {
 
 const navigateToStation = (latitude: number, longitude: number, stationName: string) => {
   const destination = `${latitude},${longitude}`;
-
   let url = '';
 
   if (Platform.OS === 'ios') {
@@ -284,18 +275,17 @@ const navigateToStation = (latitude: number, longitude: number, stationName: str
         return Linking.openURL(fallbackUrl);
       }
     })
-    .catch((err) => console.error('An error occurred opening maps', err));
+    .catch((err) => console.error('Map routing error:', err));
 };
 
-// Drop-in replacement for the StyleSheet in maps.tsx
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050505',
+    backgroundColor: '#000000',
     padding: 20,
   },
   webOffset: {
-    paddingLeft: 260,
+    paddingLeft: 280,
   },
   header: {
     marginBottom: 16,
@@ -309,56 +299,57 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#ffffff',
-    textShadowColor: '#ff00ff',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
+    color: '#00ff00',
+    textShadowColor: '#00ff00',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   subtitle: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 14,
-    color: '#ffffff',
+    fontSize: 13,
+    color: '#00cc00',
     marginTop: 4,
   },
   trackButton: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingVertical: 12,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#ffffff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#00ff00',
   },
   buttonActive: {
-    backgroundColor: '#ff0055',
+    backgroundColor: '#330000',
+    borderColor: '#ff0000',
   },
   buttonInactive: {
-    backgroundColor: '#00ffff',
+    backgroundColor: '#003300',
   },
   buttonText: {
     fontFamily: 'Comic Sans MS',
-    color: '#000000',
+    color: '#00ff00',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 14,
   },
   statusBar: {
     marginTop: 12,
     padding: 12,
-    backgroundColor: '#121212',
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#00ffff',
+    backgroundColor: '#030d03',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#008800',
   },
   statusText: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 14,
-    color: '#ffffff',
+    fontSize: 13,
+    color: '#00ff00',
     fontWeight: 'bold',
   },
   errorText: {
     fontFamily: 'Comic Sans MS',
     fontSize: 12,
-    color: '#ff0055',
+    color: '#ff4444',
     marginTop: 4,
   },
   contentLayout: {
@@ -367,75 +358,71 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     flex: 1,
-    backgroundColor: '#121212',
-    borderRadius: 20,
+    backgroundColor: '#030d03',
+    borderRadius: 12,
     overflow: 'hidden',
-    borderWidth: 3,
-    borderColor: '#ff00ff',
-    shadowColor: '#ff00ff',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
+    borderWidth: 2,
+    borderColor: '#00ff00',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#030d03',
   },
   stationsCard: {
     maxHeight: 240,
-    backgroundColor: '#121212',
-    borderRadius: 18,
-    padding: 18,
+    backgroundColor: '#030d03',
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 2,
-    borderColor: '#ffff00',
+    borderColor: '#00ff00',
   },
   stationsHeader: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: 'bold',
-    color: '#ffff00',
+    color: '#00ff00',
     marginBottom: 10,
   },
   emptyText: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 14,
-    color: '#ffffff',
+    fontSize: 13,
+    color: '#00aa00',
     marginTop: 8,
   },
   stationName: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#ffffff',
   },
   stationDetails: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 13,
-    color: '#00ffff',
+    fontSize: 12,
+    color: '#00ff00',
     marginTop: 2,
   },
   stationItemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: '#003300',
   },
   navigateButton: {
-    backgroundColor: '#00ff00',
-    paddingHorizontal: 16,
+    backgroundColor: '#003300',
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#ffffff',
+    borderColor: '#00ff00',
   },
   navigateButtonText: {
     fontFamily: 'Comic Sans MS',
-    color: '#000000',
-    fontSize: 13,
+    color: '#00ff00',
+    fontSize: 12,
     fontWeight: 'bold',
   },
 });

@@ -12,7 +12,6 @@ export default function SettingsScreen() {
   const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
 
-  // Check login session & fetch saved preferences on mount
   useEffect(() => {
     const loadSessionAndPreferences = async () => {
       try {
@@ -30,7 +29,6 @@ export default function SettingsScreen() {
 
         setUserId(storedUserId);
 
-        // Updated path to match /api/preferences
         const response = await fetch(`/api/preferences?userId=${storedUserId}`);
         const data = await response.json();
 
@@ -40,7 +38,7 @@ export default function SettingsScreen() {
           if (data.user.vehicleModel) setVehicleModel(data.user.vehicleModel);
         }
       } catch (err) {
-        console.warn('Failed to load session or preferences:', err);
+        console.warn('Failed to load preferences:', err);
       } finally {
         setFetching(false);
       }
@@ -58,7 +56,6 @@ export default function SettingsScreen() {
     setLoading(true);
 
     try {
-      // Updated path to match /api/preferences
       const response = await fetch('/api/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -73,7 +70,7 @@ export default function SettingsScreen() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to update preferences');
 
-      Alert.alert('Success', 'Commuter preferences updated successfully!');
+      Alert.alert('Success', 'Node configurations updated.');
     } catch (err: any) {
       Alert.alert('Error', err.message);
     } finally {
@@ -84,7 +81,7 @@ export default function SettingsScreen() {
   if (fetching) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#007aff" />
+        <ActivityIndicator size="large" color="#00ff00" />
       </View>
     );
   }
@@ -93,15 +90,15 @@ export default function SettingsScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.unauthCard}>
-          <Text style={styles.unauthTitle}>Login Required</Text>
+          <Text style={styles.unauthTitle}>ACCESS DENIED</Text>
           <Text style={styles.unauthText}>
-            You need to be logged in to access settings and save your vehicle routing preferences.
+            Authentication required to modify vehicle configuration parameters.
           </Text>
           <TouchableOpacity 
             style={styles.loginButton} 
             onPress={() => router.push('/login')}
           >
-            <Text style={styles.loginButtonText}>Log In</Text>
+            <Text style={styles.loginButtonText}>Authorize Login</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -110,43 +107,43 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <Text style={styles.title}>Commuter Settings</Text>
-      <Text style={styles.subtitle}>Configure your primary vehicle details for optimized map routing:</Text>
+      <Text style={styles.title}>$ config --vehicle</Text>
+      <Text style={styles.subtitle}>Set baseline powertrain parameters for routing vectors:</Text>
 
       <View style={styles.section}>
-        <Text style={styles.label}>Vehicle Make</Text>
+        <Text style={styles.label}>VEHICLE MAKE</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g. Toyota, Tesla, Ford"
-          placeholderTextColor="#64748b"
+          placeholder="e.g. Toyota, Tesla"
+          placeholderTextColor="#005500"
           value={vehicleMake}
           onChangeText={setVehicleMake}
         />
 
-        <Text style={styles.label}>Vehicle Model</Text>
+        <Text style={styles.label}>VEHICLE MODEL</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g. Prius, Model 3, F-150"
-          placeholderTextColor="#64748b"
+          placeholder="e.g. Prius, Model 3"
+          placeholderTextColor="#005500"
           value={vehicleModel}
           onChangeText={setVehicleModel}
         />
       </View>
 
-      <Text style={styles.label}>Powertrain Type</Text>
+      <Text style={styles.label}>POWERTRAIN SUBSYSTEM</Text>
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={[styles.optionButton, vehicleType === 'gas' && styles.activeGas]}
           onPress={() => handleSavePreferences('gas')}
         >
-          <Text style={styles.optionText}>⛽ Gas Powered</Text>
+          <Text style={styles.optionText}>⛽ Gas Engine</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.optionButton, vehicleType === 'ev' && styles.activeEv]}
           onPress={() => handleSavePreferences('ev')}
         >
-          <Text style={styles.optionText}>⚡ Electric Vehicle (EV)</Text>
+          <Text style={styles.optionText}>⚡ EV Node</Text>
         </TouchableOpacity>
       </View>
 
@@ -156,20 +153,19 @@ export default function SettingsScreen() {
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#ffffff" />
+          <ActivityIndicator color="#000000" />
         ) : (
-          <Text style={styles.saveButtonText}>Save Vehicle Details</Text>
+          <Text style={styles.saveButtonText}>Commit Configuration</Text>
         )}
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
-// Drop-in replacement for the StyleSheet in settings.tsx
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: '#050505', 
+    backgroundColor: '#000000', 
     padding: 24, 
     justifyContent: 'center' 
   },
@@ -179,7 +175,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: { 
     flexGrow: 1, 
-    backgroundColor: '#050505', 
+    backgroundColor: '#000000', 
     padding: 24, 
     justifyContent: 'center',
     maxWidth: 600,
@@ -188,55 +184,50 @@ const styles = StyleSheet.create({
   },
   title: { 
     fontFamily: 'Comic Sans MS',
-    fontSize: 34, 
+    fontSize: 28, 
     fontWeight: 'bold', 
-    color: '#ffffff', 
+    color: '#00ff00', 
     marginBottom: 8, 
     textAlign: 'center',
-    textShadowColor: '#00ffff',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
+    textShadowColor: '#00ff00',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   subtitle: { 
     fontFamily: 'Comic Sans MS',
-    fontSize: 15, 
-    color: '#ffffff', 
+    fontSize: 14, 
+    color: '#00cc00', 
     marginBottom: 32, 
     textAlign: 'center',
     lineHeight: 22,
   },
   section: {
-    backgroundColor: '#121212',
-    borderRadius: 20,
+    backgroundColor: '#030d03',
+    borderRadius: 16,
     padding: 24,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: '#ff00ff',
-    shadowColor: '#ff00ff',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 8,
+    borderColor: '#00ff00',
   },
   label: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: 'bold',
-    color: '#ffff00',
+    color: '#00ff00',
     marginBottom: 8,
     textTransform: 'uppercase',
   },
   input: {
     fontFamily: 'Comic Sans MS',
-    backgroundColor: '#1f1f1f',
-    color: '#ffffff',
+    backgroundColor: '#000000',
+    color: '#00ff00',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 12,
-    fontSize: 16,
+    borderRadius: 8,
+    fontSize: 15,
     marginBottom: 18,
-    borderWidth: 2,
-    borderColor: '#00ffff',
+    borderWidth: 1,
+    borderColor: '#008800',
   },
   buttonContainer: { 
     flexDirection: 'row',
@@ -245,90 +236,77 @@ const styles = StyleSheet.create({
   },
   optionButton: { 
     flex: 1,
-    padding: 18, 
-    borderRadius: 14, 
-    backgroundColor: '#121212', 
-    borderWidth: 2, 
-    borderColor: '#ffffff', 
+    padding: 16, 
+    borderRadius: 8, 
+    backgroundColor: '#030d03', 
+    borderWidth: 1, 
+    borderColor: '#008800', 
     alignItems: 'center',
     justifyContent: 'center',
   },
   activeGas: { 
-    borderColor: '#ff0055', 
-    backgroundColor: 'rgba(255, 0, 85, 0.25)',
+    borderColor: '#00ff00', 
+    backgroundColor: 'rgba(0, 255, 0, 0.15)',
   },
   activeEv: { 
     borderColor: '#00ff00', 
-    backgroundColor: 'rgba(0, 255, 0, 0.25)',
+    backgroundColor: 'rgba(0, 255, 0, 0.15)',
   },
   optionText: { 
     fontFamily: 'Comic Sans MS',
     fontSize: 15, 
     fontWeight: 'bold', 
-    color: '#ffffff' 
+    color: '#00ff00' 
   },
   saveButton: {
     backgroundColor: '#00ff00',
-    paddingVertical: 18,
-    borderRadius: 14,
+    paddingVertical: 16,
+    borderRadius: 8,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#00ff00',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
   },
   saveButtonText: {
     fontFamily: 'Comic Sans MS',
     color: '#000000',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   unauthCard: {
-    backgroundColor: '#121212',
-    borderRadius: 24,
+    backgroundColor: '#030d03',
+    borderRadius: 16,
     padding: 32,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#ffff00',
+    borderColor: '#00ff00',
     maxWidth: 400,
     alignSelf: 'center',
-    shadowColor: '#ffff00',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
   },
   unauthTitle: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#00ff00',
     marginBottom: 12,
   },
   unauthText: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 15,
-    color: '#ffffff',
+    fontSize: 14,
+    color: '#00cc00',
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 28,
+    marginBottom: 24,
   },
   loginButton: {
-    backgroundColor: '#00ffff',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 12,
+    backgroundColor: '#00ff00',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
     width: '100%',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ffffff',
   },
   loginButtonText: {
     fontFamily: 'Comic Sans MS',
     color: '#000000',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
 });

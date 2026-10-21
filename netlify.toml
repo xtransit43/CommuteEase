@@ -1,7 +1,6 @@
 [build]
-  command = "npm run build"
-  publish = "dist"
-  functions = "netlify/functions"
+  command = "npx prisma generate && npx expo export --p web"
+  publish = "dist/public"
 
 [functions]
-  included_files = ["dist/server/**"]
+  directory = "dist/server"

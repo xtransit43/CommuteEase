@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../../lib/prisma';
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 

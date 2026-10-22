@@ -1,5 +1,5 @@
 [build]
-  command = "npx prisma generate && npx expo export --p web"
+  command = "npx prisma generate && npx expo export --platform web"
   publish = "dist/public"
 
 [functions]

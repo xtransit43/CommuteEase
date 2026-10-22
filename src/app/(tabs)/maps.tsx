@@ -38,6 +38,36 @@ export default function OpenGisMapScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [gasStations, setGasStations] = useState<GasStation[]>([]);
   const [loadingStations, setLoadingStations] = useState<boolean>(false);
+  
+  // AI Integration State
+  const [aiRecommendation, setAiRecommendation] = useState<string | null>(null);
+  const [loadingAi, setLoadingAi] = useState<boolean>(false);
+  const [vehicleType, setVehicleType] = useState<'gas' | 'ev'>('gas');
+
+  // Fetch user vehicle preferences on mount
+  useEffect(() => {
+    const fetchUserPreferences = async () => {
+      try {
+        let userId = null;
+        if (Platform.OS === 'web') {
+          userId = localStorage.getItem('userId');
+        } else {
+          const SecureStore = await import('expo-secure-store');
+          userId = await SecureStore.getItemAsync('userId');
+        }
+        if (userId) {
+          const res = await fetch(`/api/preferences?userId=${userId}`);
+          const data = await res.json();
+          if (data?.user?.vehicleType) {
+            setVehicleType(data.user.vehicleType);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load vehicle preferences', e);
+      }
+    };
+    fetchUserPreferences();
+  }, []);
 
   const toggleTracking = () => {
     setTracking((prev) => !prev);
@@ -57,10 +87,39 @@ export default function OpenGisMapScreen() {
     return R * c;
   };
 
-  const fetchNearbyStations = async (coords: LocationCoords, userVehicleType: 'gas' | 'ev' = 'gas') => {
+  // Function to fetch AI insights from backend endpoint
+  const fetchAiInsights = async (currentLocation: LocationCoords, count: number) => {
+    setLoadingAi(true);
+    try {
+      const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
+          vehicleType: vehicleType,
+          stationCount: count,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.recommendation) {
+        setAiRecommendation(data.recommendation);
+      } else {
+        setAiRecommendation('Unable to pull telemetry insights at this time.');
+      }
+    } catch (err) {
+      console.error('AI fetch error:', err);
+      setAiRecommendation('AI uplink offline.');
+    } finally {
+      setLoadingAi(false);
+    }
+  };
+
+  const fetchNearbyStations = async (coords: LocationCoords) => {
     setLoadingStations(true);
     try {
-      const amenityTag = userVehicleType === 'ev' ? 'charging_station' : 'fuel';
+      const amenityTag = vehicleType === 'ev' ? 'charging_station' : 'fuel';
       const query = `[out:json];node["amenity"="${amenityTag}"](around:5000,${coords.latitude},${coords.longitude});out 10;`;
       
       const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
@@ -69,7 +128,7 @@ export default function OpenGisMapScreen() {
       if (data && data.elements) {
         const stations = data.elements.map((item: any) => ({
           id: item.id,
-          name: item.tags?.name || item.tags?.brand || (userVehicleType === 'ev' ? 'Charging Station' : 'Gas Station'),
+          name: item.tags?.name || item.tags?.brand || (vehicleType === 'ev' ? 'Charging Station' : 'Gas Station'),
           brand: item.tags?.brand,
           latitude: item.lat,
           longitude: item.lon,
@@ -78,6 +137,9 @@ export default function OpenGisMapScreen() {
 
         stations.sort((a, b) => (a.distanceKm || 0) - (b.distanceKm || 0));
         setGasStations(stations);
+        
+        // Trigger AI insight analysis with latest telemetry data[cite: 18]
+        fetchAiInsights(coords, stations.length);
       }
     } catch (err: any) {
       console.warn('Failed to fetch stations:', err);
@@ -91,6 +153,7 @@ export default function OpenGisMapScreen() {
 
     if (!tracking) {
       setGasStations([]);
+      setAiRecommendation(null);
       return;
     }
 
@@ -188,6 +251,20 @@ export default function OpenGisMapScreen() {
         </View>
       </View>
 
+      {/* Gemini AI Commute Intel Card */}
+      {tracking && (
+        <View style={styles.aiCard}>
+          <Text style={styles.aiHeader}>// GEMINI COMMUTE INTEL</Text>
+          {loadingAi ? (
+            <ActivityIndicator size="small" color="#00ff00" style={{ marginTop: 8 }} />
+          ) : (
+            <Text style={styles.aiText}>
+              {aiRecommendation || 'Awaiting spatial telemetry data for analysis...'}
+            </Text>
+          )}
+        </View>
+      )}
+
       <View style={styles.contentLayout}>
         <View style={styles.mapContainer}>
           {Platform.OS === 'web' ? (
@@ -239,7 +316,7 @@ export default function OpenGisMapScreen() {
                     
                     <TouchableOpacity 
                       style={styles.navigateButton}
-                      onPress={() => navigateToStation(item.latitude, item.longitude, item.name)}
+                      onPress={() => navigateToStation(item.latitude, item.longitude)}
                     >
                       <Text style={styles.navigateButtonText}>Route Vector</Text>
                     </TouchableOpacity>
@@ -254,7 +331,7 @@ export default function OpenGisMapScreen() {
   );
 }
 
-const navigateToStation = (latitude: number, longitude: number, stationName: string) => {
+const navigateToStation = (latitude: number, longitude: number) => {
   const destination = `${latitude},${longitude}`;
   let url = '';
 
@@ -288,7 +365,7 @@ const styles = StyleSheet.create({
     paddingLeft: 280,
   },
   header: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   headerTop: {
     flexDirection: 'row',
@@ -333,8 +410,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   statusBar: {
-    marginTop: 12,
-    padding: 12,
+    marginTop: 10,
+    padding: 10,
     backgroundColor: '#030d03',
     borderRadius: 8,
     borderWidth: 1,
@@ -352,9 +429,30 @@ const styles = StyleSheet.create({
     color: '#ff4444',
     marginTop: 4,
   },
+  aiCard: {
+    backgroundColor: '#030d03',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 2,
+    borderColor: '#00ff00',
+    marginBottom: 12,
+  },
+  aiHeader: {
+    fontFamily: 'Comic Sans MS',
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#00ff00',
+    marginBottom: 4,
+  },
+  aiText: {
+    fontFamily: 'Comic Sans MS',
+    fontSize: 13,
+    color: '#00cc00',
+    lineHeight: 18,
+  },
   contentLayout: {
     flex: 1,
-    gap: 16,
+    gap: 12,
   },
   mapContainer: {
     flex: 1,
@@ -371,35 +469,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#030d03',
   },
   stationsCard: {
-    maxHeight: 240,
+    maxHeight: 200,
     backgroundColor: '#030d03',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     borderWidth: 2,
     borderColor: '#00ff00',
   },
   stationsHeader: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#00ff00',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   emptyText: {
     fontFamily: 'Comic Sans MS',
     fontSize: 13,
     color: '#00aa00',
-    marginTop: 8,
+    marginTop: 6,
   },
   stationName: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#ffffff',
   },
   stationDetails: {
     fontFamily: 'Comic Sans MS',
-    fontSize: 12,
+    fontSize: 11,
     color: '#00ff00',
     marginTop: 2,
   },
@@ -407,14 +505,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#003300',
   },
   navigateButton: {
     backgroundColor: '#003300',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: '#00ff00',
@@ -422,7 +520,7 @@ const styles = StyleSheet.create({
   navigateButtonText: {
     fontFamily: 'Comic Sans MS',
     color: '#00ff00',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
   },
 });

@@ -4,3 +4,8 @@
 
 [functions]
   directory = "dist/server"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

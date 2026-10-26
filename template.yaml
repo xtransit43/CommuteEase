@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  CommuteEase Multi-Cloud Backend - AWS Lambda Component
+  Handles secure user vehicle preference lookups connected to PostgreSQL via Prisma.
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 256
+    Runtime: nodejs18.x
+
+Resources:
+  GetPreferencesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: aws-lambda/get-preferences/
+      Handler: index.handler
+      Environment:
+        Variables:
+          # Replace this placeholder with your actual PostgreSQL connection string (pooled URL recommended)
+          DATABASE_URL: "postgres://3b3b43e5ea681e4e65ccb2cb200dbd82cc8d7e2c94ebecc6fd0ab79213592dc9:sk_ViLPB3CSPWMbaNZHNYO6h@pooled.db.prisma.io:5432/postgres?sslmode=require"
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /preferences
+            Method: get
+
+Outputs:
+  WebSiteApiUrl:
+    Description: "API Gateway endpoint URL for Prod stage for GetPreferences function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/preferences"

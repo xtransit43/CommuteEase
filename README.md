@@ -53,12 +53,8 @@ Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
    ```bash
    npm install
    ```
-3. Configure your local environment variables in a .env file or Netlify dashboard:
-   ```bash
-   EXPO_PUBLIC_AWS_PREFERENCES_URL=<your-aws-api-gateway-url>
-   EXPO_PUBLIC_AZURE_GEOSPATIAL_URL=<your-azure-function-url>
    ```
-4. Start the development server using the local Expo CLI:
+3. Start the development server using the local Expo CLI:
    ``` bash
    npx expo start
    ```

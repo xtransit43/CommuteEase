@@ -7,7 +7,7 @@ import {
   TouchableOpacity, 
   ScrollView 
 } from 'react-native';
-import OpenGisMap from '../components/OpenGisMap'; // Adjust path if needed depending on your folder structure
+import OpenGisMap from '../../components/OpenGisMap'; // Adjust path if needed depending on your folder structure
 
 export default function MapsScreen() {
   const [geospatialData, setGeospatialData] = useState<any>(null);

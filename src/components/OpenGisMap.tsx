@@ -80,6 +80,7 @@ const terminalFont = Platform.select({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1, // Ensures the component fills its parent container's allocated space
     width: '100%',
     backgroundColor: '#000000',
   },
@@ -157,3 +158,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+// ⭐ Crucial Fix: Add default export so `import OpenGisMap from ...` works cleanly in MapsScreen
+export default OpenGisMap;

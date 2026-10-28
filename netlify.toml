@@ -1,9 +1,9 @@
 [build]
-  command = "npx prisma generate && npx expo export --platform web"
+  command = "npm install && npx prisma generate && npx expo export --platform web"
   publish = "dist"
 
 [functions]
-  directory = "dist/server"
+  directory = "netlify/functions"
 
 [[redirects]]
   from = "/*"

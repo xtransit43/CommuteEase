@@ -6,7 +6,7 @@ import {
   ActivityIndicator, 
   ScrollView 
 } from 'react-native';
-import OpenGisMap, { Station } from '../components/OpenGisMap';
+import OpenGisMap, { Station } from '../../components/OpenGisMap';
 
 export default function MapsScreen() {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);

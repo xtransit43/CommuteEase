@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 
 export type Station = {
   id: number | string;
@@ -71,6 +71,13 @@ export default function OpenGisMap({
   );
 }
 
+// Helper to safely handle cross-platform system fonts
+const terminalFont = Platform.select({
+  ios: 'Courier',
+  android: 'monospace',
+  default: 'monospace',
+});
+
 const styles = StyleSheet.create({
   container: {
     width: '100%',
@@ -86,7 +93,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   gridTitle: {
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     color: '#00ff00',
     fontSize: 16,
     fontWeight: 'bold',
@@ -96,7 +103,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 8,
   },
   gridSub: {
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     color: '#00cc00',
     fontSize: 12,
   },
@@ -107,7 +114,7 @@ const styles = StyleSheet.create({
     borderColor: '#008800',
   },
   cardTitle: {
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     fontSize: 14,
     color: '#00ff00',
     fontWeight: 'bold',
@@ -133,18 +140,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 0, 0.1)',
   },
   stationName: {
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     color: '#ffffff',
     fontSize: 13,
     fontWeight: 'bold',
   },
   stationBrand: {
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     color: '#00cc00',
     fontSize: 11,
   },
   distanceBadge: {
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     color: '#00ff00',
     fontSize: 12,
     fontWeight: 'bold',

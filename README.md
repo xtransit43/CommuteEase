@@ -1,45 +1,42 @@
 # CommuteEase
 
 ## Project Overview
-**CommuteEase** is a modern cross-platform mobile and web application built with React Native and Expo Router designed to reduce commute stress. It features an integrated OpenGIS mapping system, live GPS tracking, dynamic gas and EV charging station discovery via the Overpass API, vehicle preference routing, and an enterprise-grade **multi-cloud serverless backend** combining AWS Lambda and Azure Functions.
+**CommuteEase** is a modern cross-platform mobile and web application built with React Native and Expo Router designed to reduce commute stress. It features an integrated geospatial mapping system, interactive charging/fuel node discovery, vehicle preference routing, secure user authentication with Two-Factor Authentication (2FA), and real-time AI-powered commute insights via the Google Gemini API.
 
 ---
 
 ## Features
-- **Cross-Platform Responsive Navigation**: Automatically switches between a mobile bottom tab bar layout and a desktop-style sidebar navigation panel based on screen size.
-- **Multi-Cloud Serverless Architecture**:
-  - **AWS Lambda & PostgreSQL (Prisma ORM)**: Securely manages backend database records, user authentication sessions, and customizable commuter vehicle preferences.
-  - **Azure Functions (TypeScript / Node.js)**: High-performance serverless endpoints dedicated to geospatial logic, traffic delay calculations, and routing data.
-- **OpenGIS Mapping & Native Integration**: Powered by `react-native-maps` on mobile platforms and OpenStreetMap embeds on the web, featuring real-time location tracking and turn-by-turn navigation hooks.
-- **Vehicle Preference Routing**: Lets users configure whether they drive a gas-powered vehicle or an electric vehicle (EV), dynamically modifying station search queries (fuel vs. charging stations) through server preferences.
-- **Secure Session Management**: Supports secure token caching and persistent session state using `expo-secure-store` and local storage.
-- **Frontend Hosting**: Deployed globally via Netlify with runtime environment binding via Expo public variables (`EXPO_PUBLIC_`).
+- **Cross-Platform Responsive Navigation**: Automatically switches between a mobile bottom tab bar layout and a desktop-style sidebar navigation panel with a custom terminal-inspired dark theme (`_layout.web.tsx`)[cite: 2, 5].
+- **AI-Powered Route & Charging Insights**: Integrates with Google Gemini AI to analyze local spatial data and deliver contextual recommendations for electric vehicles (EV) and gas-powered vehicles (`ai+api.ts`)[cite: 11].
+- **Secure Authentication & 2FA**: Implements user signup/login workflows with password hashing (`bcrypt`), persistent session storage (`expo-secure-store` / browser storage), and TOTP-based Two-Factor Authentication via `speakeasy` and `qrcode` (`2fa-verify.tsx`, `setup+api.ts`, `verify+api.ts`)[cite: 6, 12, 14, 15, 16].
+- **OpenGIS Mapping & Native Integration**: Powered by `react-native-maps` on mobile platforms (`OpenGisMap.tsx`) paired with real-time route telemetry (`maps.tsx`)[cite: 10, 17].
+- **Database-Backed User Preferences**: Relational data management using Prisma ORM with PostgreSQL (`schema.prisma`) to configure custom vehicle types, makes, and models (`preferences+api.ts`)[cite: 13, 18].
 
 ---
 
 ## Tech Stack
-- **Frontend Framework**: React Native, Expo Router, Netlify
-- **Cloud Backend 1 (User Data)**: AWS Lambda, AWS SAM, PostgreSQL, Prisma ORM
-- **Cloud Backend 2 (Geospatial/Traffic)**: Azure Functions (Node.js/TypeScript)
-- **Maps & GIS**: `react-native-maps`, `expo-location`, OpenStreetMap, Overpass API
-- **Icons & Styling**: `@expo/vector-icons` (Ionicons, MaterialIcons)
-- **Storage & Security**: `expo-secure-store`, Browser Local Storage
+- **Frontend Framework**: React Native, Expo Router, TypeScript
+- **Backend & API Routes**: Expo Server API Routes, Node.js
+- **Database & ORM**: PostgreSQL, Prisma ORM (`schema.prisma`)[cite: 18]
+- **AI & Security**: Google Gemini 1.5 Flash API (`ai+api.ts`), `bcrypt`, `speakeasy` (TOTP 2FA)[cite: 11, 12, 15]
+- **Maps & GIS**: `react-native-maps`, `expo-location`[cite: 10, 17]
+- **Storage**: `expo-secure-store`, Browser Local Storage[cite: 5, 6, 9]
 
 ---
 
 ## Project Structure
-- `app/_layout.tsx`: Mobile tab layout configuration.
-- `app/_layout.web.tsx`: Responsive web desktop sidebar and bottom tab layout.
-- `app/(tabs)/_layout.tsx`: Root stack layout configuration.
-- `app/index.tsx`: Home dashboard screen with data streaming initialization.
-- `app/about.tsx`: Mission statement and application details.
-- `app/maps.tsx`: Geospatial mapping dashboard communicating with the Azure Functions backend.
-- `app/settings.tsx`: Commuter preference configurations communicating with the AWS Lambda backend.
-- `app/login.tsx`: User sign-in interface interacting with authentication workflows.
-- `app/signup.tsx`: Account registration and validation workflow.
-- `aws-lambda/get-preferences/`: AWS Lambda function code, Prisma schema (`schema.prisma`), and build configs.
-- `azure-functions/get-geospatial/`: Azure Functions TypeScript handlers for geospatial and traffic data (`src/functions/geospatial.ts`).
-- `components/OpenGisMap.tsx`: Native mobile map wrapper using `react-native-maps`.
+- `app/_layout.tsx`: Root stack layout configuration[cite: 2].
+- `app/_layout.web.tsx`: Responsive web desktop sidebar and mobile tab navigation layout[cite: 5].
+- `app/(tabs)/`: Tab screen directory for primary views.
+- `app/index.tsx`: Home dashboard screen with terminal GIS and authentication hooks[cite: 8].
+- `app/maps.tsx`: Geospatial mapping and live telemetry dashboard[cite: 10].
+- `app/settings.tsx`: Commuter profile and vehicle preference manager.
+- `app/login.tsx` & `app/signup.tsx`: Authentication interfaces and account validation logic[cite: 9, 14].
+- `app/2fa-verify.tsx`: TOTP 2FA code confirmation screen[cite: 6].
+- `app/api/`: Backend API endpoints (`ai`, `login`, `preferences`, `validation`, `setup`, `verify`)[cite: 4, 11, 12, 13, 14, 15, 16].
+- `components/OpenGisMap.tsx`: Native mobile and web map wrapper using `react-native-maps`[cite: 17].
+- `lib/prisma.ts`: Prisma database client instance.
+- `prisma/schema.prisma`: Relational database schema for users and vehicle metadata[cite: 18].
 
 ---
 ## Getting Started & Installation

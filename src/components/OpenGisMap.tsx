@@ -1,70 +1,152 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import React, { useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 
-interface GasStation {
-  id: number;
+export type Station = {
+  id: number | string;
   name: string;
-  brand?: string;
   latitude: number;
   longitude: number;
-  distanceKm?: number;
-}
+  brand?: string;
+  distanceMiles?: number;
+};
 
-interface OpenGisMapProps {
-  location?: { latitude: number; longitude: number } | null;
-  gasStations?: GasStation[];
-}
+type OpenGisMapProps = {
+  location?: { latitude: number; longitude: number };
+  gasStations?: Station[];
+  onSelectStation?: (station: Station) => void;
+};
 
-export default function OpenGisMap({ location, gasStations = [] }: OpenGisMapProps) {
-  const initialRegion = {
-    latitude: location?.latitude || 51.4769,
-    longitude: location?.longitude || 0.0000,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+export default function OpenGisMap({
+  location = { latitude: 37.7749, longitude: -122.4194 },
+  gasStations = [
+    { id: 1, name: 'Grid Charging Node Alpha', latitude: 37.779, longitude: -122.415, brand: 'Tesla Supercharger', distanceMiles: 0.4 },
+    { id: 2, name: 'EcoFuel Station Beta', latitude: 37.77, longitude: -122.425, brand: 'Shell Recharge', distanceMiles: 0.8 },
+  ],
+  onSelectStation,
+}: OpenGisMapProps) {
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+
+  const handleSelect = (station: Station) => {
+    setSelectedStation(station);
+    if (onSelectStation) {
+      onSelectStation(station);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <MapView
-        provider={PROVIDER_DEFAULT}
-        style={styles.map}
-        region={
-          location
-            ? {
-                latitude: location.latitude,
-                longitude: location.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }
-            : initialRegion
-        }
-        showsUserLocation={true}
-        showsMyLocationButton={true}
-      >
-        {/* Render markers for nearby gas/charging stations */}
-        {gasStations.map((station) => (
-          <Marker
-            key={station.id}
-            coordinate={{
-              latitude: station.latitude,
-              longitude: station.longitude,
-            }}
-            title={station.name}
-            description={station.brand ? `Brand: ${station.brand}` : 'Nearby Station'}
-          />
-        ))}
-      </MapView>
+      {/* Visual Terminal Grid Canvas Placeholder for Native */}
+      <View style={styles.gridCanvas}>
+        <Text style={styles.gridTitle}>[GIS GRID MESH ACTIVE]</Text>
+        <Text style={styles.gridSub}>
+          LAT: {location.latitude.toFixed(4)} | LNG: {location.longitude.toFixed(4)}
+        </Text>
+      </View>
+
+      {/* Station Selector overlay */}
+      <View style={styles.stationsCard}>
+        <Text style={styles.cardTitle}>⛽ Detected Nearby Nodes ({gasStations.length})</Text>
+        <ScrollView style={styles.stationList}>
+          {gasStations.map((st) => (
+            <TouchableOpacity
+              key={st.id}
+              style={[
+                styles.stationItem,
+                selectedStation?.id === st.id && styles.selectedItem,
+              ]}
+              onPress={() => handleSelect(st)}
+            >
+              <View>
+                <Text style={styles.stationName}>{st.name}</Text>
+                <Text style={styles.stationBrand}>{st.brand || 'Independent Node'}</Text>
+              </View>
+              {st.distanceMiles !== undefined && (
+                <Text style={styles.distanceBadge}>{st.distanceMiles} mi</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  map: {
     width: '100%',
-    height: '100%',
+    backgroundColor: '#000000',
+  },
+  gridCanvas: {
+    height: 180,
+    backgroundColor: '#030d03',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderColor: '#00ff00',
+    padding: 16,
+  },
+  gridTitle: {
+    fontFamily: 'Comic Sans MS',
+    color: '#00ff00',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 6,
+    textShadowColor: '#00ff00',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+  gridSub: {
+    fontFamily: 'Comic Sans MS',
+    color: '#00cc00',
+    fontSize: 12,
+  },
+  stationsCard: {
+    padding: 12,
+    backgroundColor: '#030d03',
+    borderTopWidth: 1,
+    borderColor: '#008800',
+  },
+  cardTitle: {
+    fontFamily: 'Comic Sans MS',
+    fontSize: 14,
+    color: '#00ff00',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  stationList: {
+    maxHeight: 160,
+  },
+  stationItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    marginBottom: 6,
+    backgroundColor: '#000000',
+    borderWidth: 1,
+    borderColor: '#003300',
+  },
+  selectedItem: {
+    borderColor: '#00ff00',
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+  },
+  stationName: {
+    fontFamily: 'Comic Sans MS',
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  stationBrand: {
+    fontFamily: 'Comic Sans MS',
+    color: '#00cc00',
+    fontSize: 11,
+  },
+  distanceBadge: {
+    fontFamily: 'Comic Sans MS',
+    color: '#00ff00',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

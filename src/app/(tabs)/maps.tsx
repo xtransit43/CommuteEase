@@ -4,10 +4,9 @@ import {
   Text, 
   View, 
   ActivityIndicator, 
-  TouchableOpacity, 
   ScrollView 
 } from 'react-native';
-import OpenGisMap, { Station } from '../../components/OpenGisMap';
+import OpenGisMap, { Station } from '../components/OpenGisMap';
 
 export default function MapsScreen() {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
@@ -29,6 +28,8 @@ export default function MapsScreen() {
           latitude: station.latitude,
           longitude: station.longitude,
           stationName: station.name,
+          stationCount: 4,
+          vehicleType: 'ev',
         }),
       });
 
@@ -62,7 +63,7 @@ export default function MapsScreen() {
           )}
 
           <View style={styles.section}>
-            <Text style={styles.label}>⚡ AI Route Assessment:</Text>
+            <Text style={styles.label}>⚡ Gemini AI Route Assessment:</Text>
             {aiLoading ? (
               <ActivityIndicator size="small" color="#00ff00" style={{ marginTop: 6 }} />
             ) : (

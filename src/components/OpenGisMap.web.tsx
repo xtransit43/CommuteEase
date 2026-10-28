@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, Pressable, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, Pressable, ScrollView, ViewStyle, TextStyle } from 'react-native';
 
 export type Station = {
   id: number | string;
@@ -65,6 +65,8 @@ export function OpenGisMapWeb({
                   styles.mapNodePin,
                   { top: `${35 + idx * 18}%`, left: `${40 + idx * 15}%` },
                   isSelected && styles.mapNodePinActive,
+                  // Cast cursor property for React Native Web compatibility without TS errors
+                  { cursor: 'pointer' } as ViewStyle,
                 ]}
                 onPress={() => handleSelect(st)}
               >
@@ -89,7 +91,11 @@ export function OpenGisMapWeb({
             return (
               <Pressable
                 key={st.id}
-                style={[styles.stationCard, isSelected && styles.selectedStationCard]}
+                style={[
+                  styles.stationCard, 
+                  isSelected && styles.selectedStationCard,
+                  { cursor: 'pointer' } as ViewStyle
+                ]}
                 onPress={() => handleSelect(st)}
               >
                 <View style={styles.stationInfo}>
@@ -183,105 +189,4 @@ const styles = StyleSheet.create({
     position: 'absolute',
     height: '100%',
     width: 1,
-    backgroundColor: 'rgba(0, 255, 0, 0.15)',
-  },
-  canvasCenterMarker: {
-    fontFamily: 'monospace',
-    color: '#00ff00',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  mapNodePin: {
-    position: 'absolute',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: '#002200',
-    borderWidth: 1,
-    borderColor: '#008800',
-    borderRadius: 4,
-    cursor: 'pointer',
-  },
-  mapNodePinActive: {
-    backgroundColor: '#00ff00',
-    borderColor: '#ffffff',
-    zIndex: 10,
-  },
-  pinText: {
-    fontFamily: 'monospace',
-    color: '#00ff00',
-    fontSize: 11,
-  },
-  pinTextActive: {
-    color: '#000000',
-    fontWeight: 'bold',
-  },
-  sidebarPanel: {
-    flex: 1,
-    backgroundColor: '#030d03',
-    padding: 16,
-  },
-  sidebarHeader: {
-    fontFamily: 'monospace',
-    fontSize: 14,
-    color: '#00ff00',
-    fontWeight: 'bold',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderColor: '#006600',
-  },
-  stationList: {
-    flex: 1,
-  },
-  stationCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: '#003300',
-    cursor: 'pointer',
-  },
-  selectedStationCard: {
-    borderColor: '#00ff00',
-    backgroundColor: 'rgba(0, 255, 0, 0.12)',
-  },
-  stationInfo: {
-    flex: 1,
-  },
-  stationName: {
-    fontFamily: 'monospace',
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  stationBrand: {
-    fontFamily: 'monospace',
-    color: '#00cc00',
-    fontSize: 11,
-    marginTop: 2,
-  },
-  stationCoords: {
-    fontFamily: 'monospace',
-    color: '#006600',
-    fontSize: 10,
-    marginTop: 4,
-  },
-  distanceBadge: {
-    backgroundColor: '#002200',
-    borderWidth: 1,
-    borderColor: '#00ff00',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  distanceText: {
-    fontFamily: 'monospace',
-    color: '#00ff00',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-});
+    backgroundColor: 'rgba(0, 255

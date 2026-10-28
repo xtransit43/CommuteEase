@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 
 export type Station = {
   id: number | string;
@@ -11,158 +11,43 @@ export type Station = {
 };
 
 type OpenGisMapProps = {
+  location?: { latitude: number; longitude: number };
+  gasStations?: Station[];
+  selectedStation?: Station | null;
   onSelectStation?: (station: Station) => void;
 };
 
-export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
-  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [lastFetchedCoords, setLastFetchedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [stations, setStations] = useState<Station[]>([]);
-  const [loadingStations, setLoadingStations] = useState<boolean>(false);
-  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
-  const [gpsError, setGpsError] = useState<string | null>(null);
-
-  // 1. Live GPS tracking via HTML5 Geolocation API
-  useEffect(() => {
-    if (typeof window === 'undefined' || !navigator.geolocation) {
-      setGpsError('Geolocation is not supported by your browser.');
-      return;
-    }
-
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserCoords({ latitude, longitude });
-        setGpsError(null);
-      },
-      (err) => {
-        setGpsError('GPS Access Denied or Unavailable.');
-        console.warn('Geolocation error:', err);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
-
-  // Haversine formula to compute distance in miles
-  const calculateDistanceMiles = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 3958.8; // Earth's radius in miles
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return parseFloat((R * c).toFixed(2));
-  };
-
-  // 2. Fetch nearest stations only if user moves more than ~0.06 miles (~100 meters)
-  useEffect(() => {
-    if (!userCoords) return;
-
-    if (!lastFetchedCoords) {
-      setLastFetchedCoords(userCoords);
-      fetchNearbyGasStations(userCoords.latitude, userCoords.longitude);
-      return;
-    }
-
-    const distanceMoved = calculateDistanceMiles(
-      lastFetchedCoords.latitude,
-      lastFetchedCoords.longitude,
-      userCoords.latitude,
-      userCoords.longitude
-    );
-
-    if (distanceMoved >= 0.06) {
-      setLastFetchedCoords(userCoords);
-      fetchNearbyGasStations(userCoords.latitude, userCoords.longitude);
-    }
-  }, [userCoords?.latitude, userCoords?.longitude]);
-
-  const fetchNearbyGasStations = async (lat: number, lon: number) => {
-    try {
-      setLoadingStations(true);
-      // Optimized query targeting 3000 meters (roughly 2 miles) for faster Overpass response times
-      const query = `
-        [out:json][timeout:8];
-        (
-          node["amenity"="fuel"](around:3000, ${lat}, ${lon});
-          node["amenity"="charging_station"](around:3000, ${lat}, ${lon});
-        );
-        out body 8;
-      `;
-      const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data && data.elements) {
-        const parsedStations: Station[] = data.elements.map((el: any) => ({
-          id: el.id,
-          name: el.tags?.name || el.tags?.brand || 'Fuel & Energy Node',
-          brand: el.tags?.brand || el.tags?.operator || 'Independent Grid Node',
-          latitude: el.lat,
-          longitude: el.lon,
-          distanceMiles: calculateDistanceMiles(lat, lon, el.lat, el.lon),
-        }));
-
-        parsedStations.sort((a, b) => (a.distanceMiles || 0) - (b.distanceMiles || 0));
-        setStations(parsedStations);
-      }
-    } catch (err) {
-      console.error('Failed to query Overpass API:', err);
-    } finally {
-      setLoadingStations(false);
-    }
-  };
-
-  const activeLat = selectedStation?.latitude || userCoords?.latitude || 37.7749;
-  const activeLon = selectedStation?.longitude || userCoords?.longitude || -122.4194;
-
-  const delta = 0.015;
-  const bbox = `${activeLon - delta},${activeLat - delta},${activeLon + delta},${activeLat + delta}`;
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${activeLat},${activeLon}`;
+export default function OpenGisMap({
+  location = { latitude: 37.7749, longitude: -122.4194 },
+  gasStations = [
+    { id: 1, name: 'Grid Charging Node Alpha', latitude: 37.779, longitude: -122.415, brand: 'Tesla Supercharger', distanceMiles: 0.4 },
+    { id: 2, name: 'EcoFuel Station Beta', latitude: 37.77, longitude: -122.425, brand: 'Shell Recharge', distanceMiles: 0.8 },
+  ],
+  selectedStation,
+  onSelectStation,
+}: OpenGisMapProps) {
 
   const handleSelect = (station: Station) => {
-    setSelectedStation(station);
-    if (onSelectStation) onSelectStation(station);
+    if (onSelectStation) {
+      onSelectStation(station);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <iframe
-        src={mapUrl}
-        style={{
-          width: '100%',
-          height: '280px',
-          border: 'none',
-          filter: 'invert(90%) hue-rotate(180deg) brightness(95%) contrast(120%)',
-        }}
-        title="Live GPS Grid Map"
-      />
-
-      <View style={styles.gpsBadge}>
-        <Text style={styles.gpsBadgeText}>
-          {userCoords
-            ? `🟢 GPS Lock: ${userCoords.latitude.toFixed(4)}, ${userCoords.longitude.toFixed(4)}`
-            : gpsError || '📡 Acquiring GPS Lock...'}
+      {/* Visual Terminal Grid Canvas Placeholder for Native */}
+      <View style={styles.gridCanvas}>
+        <Text style={styles.gridTitle}>[GIS GRID MESH ACTIVE]</Text>
+        <Text style={styles.gridSub}>
+          LAT: {location.latitude.toFixed(4)} | LNG: {location.longitude.toFixed(4)}
         </Text>
       </View>
 
+      {/* Station Selector overlay */}
       <View style={styles.stationsCard}>
-        <View style={styles.headerRow}>
-          <Text style={styles.cardTitle}>⛽ Nearest Grid Stations ({stations.length})</Text>
-          {loadingStations && <ActivityIndicator size="small" color="#00ff00" />}
-        </View>
-
-        {stations.length === 0 && !loadingStations ? (
-          <Text style={styles.noDataText}>Scanning surrounding area within 2 miles...</Text>
-        ) : (
-          stations.slice(0, 4).map((st) => (
+        <Text style={styles.cardTitle}>⛽ Detected Nearby Nodes ({gasStations.length})</Text>
+        <View style={styles.stationList}>
+          {gasStations.map((st) => (
             <TouchableOpacity
               key={st.id}
               style={[
@@ -173,11 +58,102 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
             >
               <View>
                 <Text style={styles.stationName}>{st.name}</Text>
-                <Text style={styles.stationBrand}>{st.brand}</Text>
+                <Text style={styles.stationBrand}>{st.brand || 'Independent Node'}</Text>
               </View>
-              <Text style={styles.distanceBadge}>{st.distanceMiles} mi</Text>
+              {st.distanceMiles !== undefined && (
+                <Text style={styles.distanceBadge}>{st.distanceMiles} mi</Text>
+              )}
             </TouchableOpacity>
-          ))
-        )}
+          ))}
+        </View>
       </View>
     </View>
+  );
+}
+
+// Helper to safely handle cross-platform system fonts
+const terminalFont = Platform.select({
+  ios: 'Courier',
+  android: 'monospace',
+  default: 'monospace',
+});
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    backgroundColor: '#000000',
+  },
+  gridCanvas: {
+    height: 180,
+    backgroundColor: '#030d03',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderColor: '#00ff00',
+    padding: 16,
+  },
+  gridTitle: {
+    fontFamily: terminalFont,
+    color: '#00ff00',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 6,
+    textShadowColor: '#00ff00',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+  gridSub: {
+    fontFamily: terminalFont,
+    color: '#00cc00',
+    fontSize: 12,
+  },
+  stationsCard: {
+    padding: 12,
+    backgroundColor: '#030d03',
+    borderTopWidth: 1,
+    borderColor: '#008800',
+  },
+  cardTitle: {
+    fontFamily: terminalFont,
+    fontSize: 14,
+    color: '#00ff00',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  stationList: {
+    maxHeight: 160,
+  },
+  stationItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    marginBottom: 6,
+    backgroundColor: '#000000',
+    borderWidth: 1,
+    borderColor: '#003300',
+  },
+  selectedItem: {
+    borderColor: '#00ff00',
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+  },
+  stationName: {
+    fontFamily: terminalFont,
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  stationBrand: {
+    fontFamily: terminalFont,
+    color: '#00cc00',
+    fontSize: 11,
+  },
+  distanceBadge: {
+    fontFamily: terminalFont,
+    color: '#00ff00',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+});

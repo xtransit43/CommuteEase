@@ -17,7 +17,7 @@ type OpenGisMapProps = {
   onSelectStation?: (station: Station) => void;
 };
 
-export default function OpenGisMap({
+export function OpenGisMap({
   location = { latitude: 37.7749, longitude: -122.4194 },
   gasStations = [
     { id: 1, name: 'Grid Charging Node Alpha', latitude: 37.779, longitude: -122.415, brand: 'Tesla Supercharger', distanceMiles: 0.4 },

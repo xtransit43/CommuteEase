@@ -11,12 +11,12 @@ export type Station = {
 };
 
 type OpenGisMapProps = {
-  location?: { latitude: number; longitude: number };
   onSelectStation?: (station: Station) => void;
 };
 
 export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
   const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [lastFetchedCoords, setLastFetchedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [stations, setStations] = useState<Station[]>([]);
   const [loadingStations, setLoadingStations] = useState<boolean>(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
@@ -45,12 +45,6 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  // 2. Fetch nearest gas and EV charging stations when coordinates are updated
-  useEffect(() => {
-    if (!userCoords) return;
-    fetchNearbyGasStations(userCoords.latitude, userCoords.longitude);
-  }, [userCoords?.latitude, userCoords?.longitude]);
-
   // Haversine formula to compute distance in miles
   const calculateDistanceMiles = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 3958.8; // Earth's radius in miles
@@ -66,10 +60,32 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
     return parseFloat((R * c).toFixed(2));
   };
 
+  // 2. Fetch nearest stations only if user moves more than ~0.06 miles (~100 meters)
+  useEffect(() => {
+    if (!userCoords) return;
+
+    if (!lastFetchedCoords) {
+      setLastFetchedCoords(userCoords);
+      fetchNearbyGasStations(userCoords.latitude, userCoords.longitude);
+      return;
+    }
+
+    const distanceMoved = calculateDistanceMiles(
+      lastFetchedCoords.latitude,
+      lastFetchedCoords.longitude,
+      userCoords.latitude,
+      userCoords.longitude
+    );
+
+    if (distanceMoved >= 0.06) {
+      setLastFetchedCoords(userCoords);
+      fetchNearbyGasStations(userCoords.latitude, userCoords.longitude);
+    }
+  }, [userCoords?.latitude, userCoords?.longitude]);
+
   const fetchNearbyGasStations = async (lat: number, lon: number) => {
     try {
       setLoadingStations(true);
-      // Query Overpass API for fuel & charging nodes within 5km (~3 miles)
       const query = `
         [out:json][timeout:10];
         (
@@ -117,7 +133,6 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
 
   return (
     <View style={styles.container}>
-      {/* Interactive Dark Terminal OpenStreetMap Embed */}
       <iframe
         src={mapUrl}
         style={{
@@ -129,7 +144,6 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
         title="Live GPS Grid Map"
       />
 
-      {/* GPS Status Telemetry Badge */}
       <View style={styles.gpsBadge}>
         <Text style={styles.gpsBadgeText}>
           {userCoords
@@ -138,7 +152,6 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
         </Text>
       </View>
 
-      {/* Nearby Stations List */}
       <View style={styles.stationsCard}>
         <View style={styles.headerRow}>
           <Text style={styles.cardTitle}>⛽ Nearest Grid Stations ({stations.length})</Text>
@@ -171,77 +184,16 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    backgroundColor: '#000000',
-  },
-  gpsBadge: {
-    backgroundColor: '#030d03',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderColor: '#00ff00',
-  },
-  gpsBadgeText: {
-    fontFamily: 'Comic Sans MS',
-    color: '#00ff00',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  stationsCard: {
-    padding: 12,
-    backgroundColor: '#030d03',
-    borderTopWidth: 1,
-    borderColor: '#008800',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontFamily: 'Comic Sans MS',
-    fontSize: 14,
-    color: '#00ff00',
-    fontWeight: 'bold',
-  },
-  noDataText: {
-    fontFamily: 'Comic Sans MS',
-    color: '#008800',
-    fontSize: 12,
-  },
-  stationItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    marginBottom: 6,
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: '#003300',
-  },
-  selectedItem: {
-    borderColor: '#00ff00',
-    backgroundColor: 'rgba(0,255,0,0.1)',
-  },
-  stationName: {
-    fontFamily: 'Comic Sans MS',
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  stationBrand: {
-    fontFamily: 'Comic Sans MS',
-    color: '#00cc00',
-    fontSize: 11,
-  },
-  distanceBadge: {
-    fontFamily: 'Comic Sans MS',
-    color: '#00ff00',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
+  container: { width: '100%', backgroundColor: '#000000' },
+  gpsBadge: { backgroundColor: '#030d03', paddingVertical: 6, paddingHorizontal: 12, borderBottomWidth: 1, borderColor: '#00ff00' },
+  gpsBadgeText: { fontFamily: 'Comic Sans MS', color: '#00ff00', fontSize: 12, fontWeight: 'bold' },
+  stationsCard: { padding: 12, backgroundColor: '#030d03', borderTopWidth: 1, borderColor: '#008800' },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  cardTitle: { fontFamily: 'Comic Sans MS', fontSize: 14, color: '#00ff00', fontWeight: 'bold' },
+  noDataText: { fontFamily: 'Comic Sans MS', color: '#008800', fontSize: 12 },
+  stationItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 6, marginBottom: 6, backgroundColor: '#000000', borderWidth: 1, borderColor: '#003300' },
+  selectedItem: { borderColor: '#00ff00', backgroundColor: 'rgba(0,255,0,0.1)' },
+  stationName: { fontFamily: 'Comic Sans MS', color: '#ffffff', fontSize: 13, fontWeight: 'bold' },
+  stationBrand: { fontFamily: 'Comic Sans MS', color: '#00cc00', fontSize: 11 },
+  distanceBadge: { fontFamily: 'Comic Sans MS', color: '#00ff00', fontSize: 12, fontWeight: 'bold' },
 });

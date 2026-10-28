@@ -39,7 +39,7 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
         setGpsError('GPS Access Denied or Unavailable.');
         console.warn('Geolocation error:', err);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
@@ -86,13 +86,14 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
   const fetchNearbyGasStations = async (lat: number, lon: number) => {
     try {
       setLoadingStations(true);
+      // Optimized query targeting 3000 meters (roughly 2 miles) for faster Overpass response times
       const query = `
-        [out:json][timeout:10];
+        [out:json][timeout:8];
         (
-          node["amenity"="fuel"](around:5000, ${lat}, ${lon});
-          node["amenity"="charging_station"](around:5000, ${lat}, ${lon});
+          node["amenity"="fuel"](around:3000, ${lat}, ${lon});
+          node["amenity"="charging_station"](around:3000, ${lat}, ${lon});
         );
-        out body 10;
+        out body 8;
       `;
       const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
@@ -159,7 +160,7 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
         </View>
 
         {stations.length === 0 && !loadingStations ? (
-          <Text style={styles.noDataText}>Scanning surrounding area within 3 miles...</Text>
+          <Text style={styles.noDataText}>Scanning surrounding area within 2 miles...</Text>
         ) : (
           stations.slice(0, 4).map((st) => (
             <TouchableOpacity
@@ -180,20 +181,3 @@ export default function OpenGisMap({ onSelectStation }: OpenGisMapProps) {
         )}
       </View>
     </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { width: '100%', backgroundColor: '#000000' },
-  gpsBadge: { backgroundColor: '#030d03', paddingVertical: 6, paddingHorizontal: 12, borderBottomWidth: 1, borderColor: '#00ff00' },
-  gpsBadgeText: { fontFamily: 'Comic Sans MS', color: '#00ff00', fontSize: 12, fontWeight: 'bold' },
-  stationsCard: { padding: 12, backgroundColor: '#030d03', borderTopWidth: 1, borderColor: '#008800' },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  cardTitle: { fontFamily: 'Comic Sans MS', fontSize: 14, color: '#00ff00', fontWeight: 'bold' },
-  noDataText: { fontFamily: 'Comic Sans MS', color: '#008800', fontSize: 12 },
-  stationItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 6, marginBottom: 6, backgroundColor: '#000000', borderWidth: 1, borderColor: '#003300' },
-  selectedItem: { borderColor: '#00ff00', backgroundColor: 'rgba(0,255,0,0.1)' },
-  stationName: { fontFamily: 'Comic Sans MS', color: '#ffffff', fontSize: 13, fontWeight: 'bold' },
-  stationBrand: { fontFamily: 'Comic Sans MS', color: '#00cc00', fontSize: 11 },
-  distanceBadge: { fontFamily: 'Comic Sans MS', color: '#00ff00', fontSize: 12, fontWeight: 'bold' },
-});

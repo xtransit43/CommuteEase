@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 
 export type Station = {
   id: number | string;
@@ -13,6 +13,7 @@ export type Station = {
 type OpenGisMapProps = {
   location?: { latitude: number; longitude: number };
   gasStations?: Station[];
+  selectedStation?: Station | null;
   onSelectStation?: (station: Station) => void;
 };
 
@@ -22,12 +23,11 @@ export default function OpenGisMap({
     { id: 1, name: 'Grid Charging Node Alpha', latitude: 37.779, longitude: -122.415, brand: 'Tesla Supercharger', distanceMiles: 0.4 },
     { id: 2, name: 'EcoFuel Station Beta', latitude: 37.77, longitude: -122.425, brand: 'Shell Recharge', distanceMiles: 0.8 },
   ],
+  selectedStation,
   onSelectStation,
 }: OpenGisMapProps) {
-  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
 
   const handleSelect = (station: Station) => {
-    setSelectedStation(station);
     if (onSelectStation) {
       onSelectStation(station);
     }
@@ -46,7 +46,7 @@ export default function OpenGisMap({
       {/* Station Selector overlay */}
       <View style={styles.stationsCard}>
         <Text style={styles.cardTitle}>⛽ Detected Nearby Nodes ({gasStations.length})</Text>
-        <ScrollView style={styles.stationList}>
+        <View style={styles.stationList}>
           {gasStations.map((st) => (
             <TouchableOpacity
               key={st.id}
@@ -65,7 +65,7 @@ export default function OpenGisMap({
               )}
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
       </View>
     </View>
   );

@@ -68,7 +68,10 @@ export default function MapsScreen() {
 
   return (
     <View style={styles.container}>
-      <OpenGisMap onSelectStation={handleStationSelect} />
+      {/* Wrap map in a container with flex: 1 so it expands to fill available space */}
+      <View style={styles.mapContainer}>
+        <OpenGisMap onSelectStation={handleStationSelect} />
+      </View>
 
       <ScrollView contentContainerStyle={styles.overlayContainer}>
         <View style={styles.card}>
@@ -96,12 +99,17 @@ export default function MapsScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+      
+      {/* Note: If you wanted the card to float directly on top of the map instead of stacking below it, 
+          you can change overlayContainer to use absolute positioning: 
+          overlayContainer: { position: 'absolute', bottom: 16, left: 16, right: 16 } */}
+    ☕</View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000000' },
+  mapContainer: { flex: 1 }, // Ensures the map component stretches to fill screen estate properly
   overlayContainer: { padding: 16 },
   card: { 
     backgroundColor: '#030d03', 
@@ -111,7 +119,6 @@ const styles = StyleSheet.create({
     borderColor: '#00ff00' 
   },
   title: { 
-    fontFamily: 'Comic Sans MS', 
     fontSize: 20, 
     fontWeight: 'bold', 
     color: '#00ff00', 
@@ -119,7 +126,6 @@ const styles = StyleSheet.create({
     marginBottom: 8 
   },
   subtitle: { 
-    fontFamily: 'Comic Sans MS', 
     fontSize: 12, 
     color: '#00cc00', 
     textAlign: 'center', 
@@ -131,8 +137,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#003300', 
     paddingBottom: 8 
   },
-  label: { fontFamily: 'Comic Sans MS', fontSize: 13, color: '#00cc00' },
-  value: { fontFamily: 'Comic Sans MS', fontSize: 15, color: '#00ff00', fontWeight: 'bold' },
-  valueHighlight: { fontFamily: 'Comic Sans MS', fontSize: 14, color: '#00ff00' },
-  aiText: { fontFamily: 'Comic Sans MS', fontSize: 13, color: '#ffffff', fontStyle: 'italic', marginTop: 4 },
+  label: { fontSize: 13, color: '#00cc00' },
+  value: { fontSize: 15, color: '#00ff00', fontWeight: 'bold' },
+  valueHighlight: { fontSize: 14, color: '#00ff00' },
+  aiText: { fontSize: 13, color: '#ffffff', fontStyle: 'italic', marginTop: 4 },
 });

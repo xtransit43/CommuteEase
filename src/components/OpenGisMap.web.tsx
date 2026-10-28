@@ -17,7 +17,7 @@ type OpenGisMapWebProps = {
   onSelectStation?: (station: Station) => void;
 };
 
-export default function OpenGisMapWeb({
+export function OpenGisMapWeb({
   location = { latitude: 37.7749, longitude: -122.4194 },
   gasStations = [
     { id: 1, name: 'Grid Charging Node Alpha', latitude: 37.779, longitude: -122.415, brand: 'Tesla Supercharger', distanceMiles: 0.4 },
@@ -238,3 +238,50 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: '#000000',
+    borderWidth: 1,
+    borderColor: '#003300',
+    cursor: 'pointer',
+  },
+  selectedStationCard: {
+    borderColor: '#00ff00',
+    backgroundColor: 'rgba(0, 255, 0, 0.12)',
+  },
+  stationInfo: {
+    flex: 1,
+  },
+  stationName: {
+    fontFamily: 'monospace',
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  stationBrand: {
+    fontFamily: 'monospace',
+    color: '#00cc00',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  stationCoords: {
+    fontFamily: 'monospace',
+    color: '#006600',
+    fontSize: 10,
+    marginTop: 4,
+  },
+  distanceBadge: {
+    backgroundColor: '#002200',
+    borderWidth: 1,
+    borderColor: '#00ff00',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  distanceText: {
+    fontFamily: 'monospace',
+    color: '#00ff00',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+});

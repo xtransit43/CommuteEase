@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   StyleSheet, 
   Text, 
   View, 
   ActivityIndicator, 
-  ScrollView 
+  ScrollView,
+  InteractionManager
 } from 'react-native';
 import OpenGisMap, { Station } from '../../components/OpenGisMap';
 
@@ -13,12 +14,29 @@ export default function MapsScreen() {
   const [aiRecommendation, setAiRecommendation] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState<boolean>(false);
 
+  // In-memory cache to store AI responses so re-selecting a station is instantaneous
+  const aiCacheRef = useRef<Map<string, string>>(new Map());
+
   const handleStationSelect = (station: Station) => {
+    // 1. Instant UI update: Select station and clear old AI text immediately
     setSelectedStation(station);
-    fetchAiInsights(station);
+    setAiRecommendation(null);
+
+    const cacheKey = `${station.latitude}-${station.longitude}`;
+
+    // 2. Check local cache first
+    if (aiCacheRef.current.has(cacheKey)) {
+      setAiRecommendation(aiCacheRef.current.get(cacheKey)!);
+      return;
+    }
+
+    // 3. Defer the heavy AI fetch until after map animations/touch frames complete
+    InteractionManager.runAfterInteractions(() => {
+      fetchAiInsights(station, cacheKey);
+    });
   };
 
-  const fetchAiInsights = async (station: Station) => {
+  const fetchAiInsights = async (station: Station, cacheKey: string) => {
     try {
       setAiLoading(true);
       const response = await fetch('/api/ai', {
@@ -34,11 +52,15 @@ export default function MapsScreen() {
       });
 
       const data = await response.json();
-      if (response.ok) {
+      if (response.ok && data.recommendation) {
+        aiCacheRef.current.set(cacheKey, data.recommendation);
         setAiRecommendation(data.recommendation);
+      } else {
+        setAiRecommendation('Failed to generate route assessment. Please try again.');
       }
     } catch (err) {
       console.error('Failed to fetch AI insights:', err);
+      setAiRecommendation('Network error while reaching Gemini AI.');
     } finally {
       setAiLoading(false);
     }

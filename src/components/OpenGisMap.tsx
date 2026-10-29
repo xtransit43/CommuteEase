@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Platform, ScrollView } from 'react-native';
 
 export type Station = {
   id: number | string;
@@ -8,6 +8,7 @@ export type Station = {
   longitude: number;
   brand?: string;
   distanceMiles?: number;
+  type?: 'gas' | 'ev';
 };
 
 type OpenGisMapProps = {
@@ -19,10 +20,7 @@ type OpenGisMapProps = {
 
 export function OpenGisMap({
   location = { latitude: 37.7749, longitude: -122.4194 },
-  gasStations = [
-    { id: 1, name: 'Grid Charging Node Alpha', latitude: 37.779, longitude: -122.415, brand: 'Tesla Supercharger', distanceMiles: 0.4 },
-    { id: 2, name: 'EcoFuel Station Beta', latitude: 37.77, longitude: -122.425, brand: 'Shell Recharge', distanceMiles: 0.8 },
-  ],
+  gasStations = [],
   selectedStation,
   onSelectStation,
 }: OpenGisMapProps) {
@@ -35,7 +33,7 @@ export function OpenGisMap({
 
   return (
     <View style={styles.container}>
-      {/* Visual Terminal Grid Canvas Placeholder for Native */}
+      {/* Visual Terminal Grid Canvas */}
       <View style={styles.gridCanvas}>
         <Text style={styles.gridTitle}>[GIS GRID MESH ACTIVE]</Text>
         <Text style={styles.gridSub}>
@@ -45,33 +43,41 @@ export function OpenGisMap({
 
       {/* Station Selector overlay */}
       <View style={styles.stationsCard}>
-        <Text style={styles.cardTitle}>⛽ Detected Nearby Nodes ({gasStations.length})</Text>
-        <View style={styles.stationList}>
-          {gasStations.map((st) => (
-            <TouchableOpacity
-              key={st.id}
-              style={[
-                styles.stationItem,
-                selectedStation?.id === st.id && styles.selectedItem,
-              ]}
-              onPress={() => handleSelect(st)}
-            >
-              <View>
-                <Text style={styles.stationName}>{st.name}</Text>
-                <Text style={styles.stationBrand}>{st.brand || 'Independent Node'}</Text>
-              </View>
-              {st.distanceMiles !== undefined && (
-                <Text style={styles.distanceBadge}>{st.distanceMiles} mi</Text>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Text style={styles.cardTitle}>
+          📍 Detected Nearby Nodes ({gasStations.length})
+        </Text>
+        <ScrollView style={styles.stationList}>
+          {gasStations.length === 0 ? (
+            <Text style={styles.emptyText}>Scanning grid for active nodes...</Text>
+          ) : (
+            gasStations.map((st) => (
+              <TouchableOpacity
+                key={st.id}
+                style={[
+                  styles.stationItem,
+                  selectedStation?.id === st.id && styles.selectedItem,
+                ]}
+                onPress={() => handleSelect(st)}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.stationName}>
+                    {st.type === 'ev' ? '⚡ ' : '⛽ '}
+                    {st.name}
+                  </Text>
+                  <Text style={styles.stationBrand}>{st.brand || 'Independent Node'}</Text>
+                </View>
+                {st.distanceMiles !== undefined && (
+                  <Text style={styles.distanceBadge}>{st.distanceMiles} mi</Text>
+                )}
+              </TouchableOpacity>
+            ))
+          )}
+        </ScrollView>
       </View>
     </View>
   );
 }
 
-// Helper to safely handle cross-platform system fonts
 const terminalFont = Platform.select({
   ios: 'Courier',
   android: 'monospace',
@@ -80,12 +86,12 @@ const terminalFont = Platform.select({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // Ensures the component fills its parent container's allocated space
+    flex: 1,
     width: '100%',
     backgroundColor: '#000000',
   },
   gridCanvas: {
-    height: 180,
+    height: 140,
     backgroundColor: '#030d03',
     justifyContent: 'center',
     alignItems: 'center',
@@ -99,9 +105,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 6,
-    textShadowColor: '#00ff00',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
   },
   gridSub: {
     fontFamily: terminalFont,
@@ -109,10 +112,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   stationsCard: {
+    flex: 1,
     padding: 12,
     backgroundColor: '#030d03',
-    borderTopWidth: 1,
-    borderColor: '#008800',
   },
   cardTitle: {
     fontFamily: terminalFont,
@@ -122,7 +124,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   stationList: {
-    maxHeight: 160,
+    maxHeight: 220,
+  },
+  emptyText: {
+    fontFamily: terminalFont,
+    color: '#008800',
+    fontSize: 12,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 12,
   },
   stationItem: {
     flexDirection: 'row',
@@ -141,23 +151,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 0, 0.1)',
   },
   stationName: {
-    fontFamily: terminalFont,
+    fontFamily: 'monospace',
     color: '#ffffff',
     fontSize: 13,
     fontWeight: 'bold',
   },
   stationBrand: {
-    fontFamily: terminalFont,
+    fontFamily: 'monospace',
     color: '#00cc00',
     fontSize: 11,
   },
   distanceBadge: {
-    fontFamily: terminalFont,
+    fontFamily: 'monospace',
     color: '#00ff00',
     fontSize: 12,
     fontWeight: 'bold',
   },
 });
 
-// ⭐ Crucial Fix: Add default export so `import OpenGisMap from ...` works cleanly in MapsScreen
 export default OpenGisMap;

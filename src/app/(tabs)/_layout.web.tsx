@@ -18,27 +18,29 @@ export default function WebLayout() {
   const [username, setUsername] = useState<string | null>(null);
   const pathname = usePathname();
 
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        let userId = null;
-        let storedUsername = null;
+  const checkAuthStatus = async () => {
+    try {
+      let userId = null;
+      let storedUsername = null;
 
-        if (Platform.OS === 'web') {
-          userId = localStorage.getItem('userId');
-          storedUsername = localStorage.getItem('username');
-        } else {
-          userId = await SecureStore.getItemAsync('userId');
-          storedUsername = await SecureStore.getItemAsync('username');
-        }
-
-        setIsLoggedIn(!!userId);
-        if (storedUsername) setUsername(storedUsername);
-      } catch (err) {
-        setIsLoggedIn(false);
+      if (Platform.OS === 'web') {
+        userId = localStorage.getItem('userId');
+        storedUsername = localStorage.getItem('username');
+      } else {
+        userId = await SecureStore.getItemAsync('userId');
+        storedUsername = await SecureStore.getItemAsync('username');
       }
-    };
 
+      setIsLoggedIn(!!userId);
+      setUsername(storedUsername);
+    } catch (err) {
+      setIsLoggedIn(false);
+      setUsername(null);
+    }
+  };
+
+  // Re-verify authentication status on every route change or focus
+  useEffect(() => {
     checkAuthStatus();
   }, [pathname]);
 
@@ -52,6 +54,7 @@ export default function WebLayout() {
           <NavLink href="/about" label="About" icon="info" isSidebar={isDesktop} />
           <NavLink href="/maps" label="Maps" icon="map" isSidebar={isDesktop} />
           
+          {/* ⭐ Settings and Profile links dynamically display based on active login state */}
           {isLoggedIn && (
             <NavLink href="/settings" label="Settings" icon="settings" isSidebar={isDesktop} />
           )}

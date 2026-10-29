@@ -39,9 +39,13 @@ export default function WebLayout() {
     }
   };
 
-  // Re-verify authentication status on every route change or focus
   useEffect(() => {
     checkAuthStatus();
+
+    if (Platform.OS === 'web') {
+      window.addEventListener('storage', checkAuthStatus);
+      return () => window.removeEventListener('storage', checkAuthStatus);
+    }
   }, [pathname]);
 
   return (
@@ -54,7 +58,7 @@ export default function WebLayout() {
           <NavLink href="/about" label="About" icon="info" isSidebar={isDesktop} />
           <NavLink href="/maps" label="Maps" icon="map" isSidebar={isDesktop} />
           
-          {/* ⭐ Settings and Profile links dynamically display based on active login state */}
+          {/* ⭐ Settings tab only renders when user is logged in */}
           {isLoggedIn && (
             <NavLink href="/settings" label="Settings" icon="settings" isSidebar={isDesktop} />
           )}

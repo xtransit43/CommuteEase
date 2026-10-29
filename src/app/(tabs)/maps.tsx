@@ -72,7 +72,10 @@ export default function MapsScreen() {
     <View style={styles.container}>
       {/* Map fills the entire background view */}
       <View style={styles.mapContainer}>
-        <OpenGisMap onSelectStation={handleStationSelect} />
+        <OpenGisMap 
+          selectedStation={selectedStation}
+          onSelectStation={handleStationSelect} 
+        />
       </View>
 
       {/* Floating card overlay positioned on top of the map */}

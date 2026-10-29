@@ -10,16 +10,20 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import * as SecureStore from 'expo-secure-store';
+
+// Import both map implementations for cross-platform support
 import OpenGisMap, { Station } from '../../components/OpenGisMap';
+import OpenGisMapWeb from '../../components/OpenGisMapWeb';
 
 export default function MapsScreen() {
-  const [location, setLocation] = useState({ latitude: 51.48, longitude: -0 });
-  const [vehicleType, setVehicleType] = useState<'gas' | 'ev'>('gas'); // Default fallback
+  // Default fallback set to Greenwich, London
+  const [location, setLocation] = useState({ latitude: 51.4800, longitude: -0.0000 });
+  const [vehicleType, setVehicleType] = useState<'gas' | 'ev'>('gas');
   const [gasStations, setGasStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [aiRecommendation, setAiRecommendation] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState<boolean>(false);
-  const [loadingStatus, setLoadingStatus] = useState<string>('Acquiring GPS lock...');
+  const [loadingStatus, setLoadingStatus] = useState<string>('Acquiring Greenwich telemetry...');
 
   const aiCacheRef = useRef<Map<string, string>>(new Map());
 
@@ -27,7 +31,6 @@ export default function MapsScreen() {
   useEffect(() => {
     (async () => {
       try {
-        // Get User ID from SecureStore / localStorage
         let userId = null;
         if (Platform.OS === 'web') {
           userId = localStorage.getItem('userId');
@@ -35,18 +38,20 @@ export default function MapsScreen() {
           userId = await SecureStore.getItemAsync('userId');
         }
 
+        let userPowertrain: 'gas' | 'ev' = 'gas';
         if (userId) {
           const prefRes = await fetch(`/api/preferences?userId=${userId}`);
           const prefData = await prefRes.json();
           if (prefRes.ok && prefData.user?.vehicleType) {
-            setVehicleType(prefData.user.vehicleType);
+            userPowertrain = prefData.user.vehicleType;
+            setVehicleType(userPowertrain);
           }
         }
 
         // Request GPS Location Permissions
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          setLoadingStatus('Location permission denied');
+          setLoadingStatus('Location permission denied. Using Greenwich default.');
           return;
         }
 
@@ -57,21 +62,19 @@ export default function MapsScreen() {
         };
         setLocation(userCoords);
 
-        // Fetch stations matching their preferred vehicle type
+        // Fetch stations matching their preferred vehicle type from Overpass
         setLoadingStatus('Querying Overpass GIS nodes...');
-        await fetchStationsDirectly(userCoords.latitude, userCoords.longitude, vehicleType);
+        await fetchStationsDirectly(userCoords.latitude, userCoords.longitude, userPowertrain);
       } catch (err) {
         console.error('Initialization error:', err);
-        setLoadingStatus('Failed to initialize telemetry.');
+        setLoadingStatus('Failed to acquire live GPS lock.');
       }
     })();
   }, []);
 
   // 2. Direct Overpass API Query filtered by User's Vehicle Type
   const fetchStationsDirectly = async (lat: number, lng: number, prefType: 'gas' | 'ev') => {
-    const radius = 5000; // 5km radius
-    
-    // Dynamically query fuel stations or charging stations based on user preference
+    const radius = 5000; // 5km search radius
     const amenityFilter = prefType === 'ev' ? '"amenity"="charging_station"' : '"amenity"="fuel"';
     
     const overpassQuery = `
@@ -92,7 +95,7 @@ export default function MapsScreen() {
 
       const data = await response.json();
 
-      const parsedStations: Station[] = data.elements
+      const parsedStations: Station[] = (data.elements || [])
         .map((el: any, index: number) => {
           const elementLat = el.lat || el.center?.lat;
           const elementLon = el.lon || el.center?.lon;
@@ -182,12 +185,21 @@ export default function MapsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
-        <OpenGisMap 
-          location={location}
-          gasStations={gasStations}
-          selectedStation={selectedStation}
-          onSelectStation={handleStationSelect} 
-        />
+        {Platform.OS === 'web' ? (
+          <OpenGisMapWeb 
+            location={location}
+            gasStations={gasStations}
+            selectedStation={selectedStation}
+            onSelectStation={handleStationSelect}
+          />
+        ) : (
+          <OpenGisMap 
+            location={location}
+            gasStations={gasStations}
+            selectedStation={selectedStation}
+            onSelectStation={handleStationSelect} 
+          />
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.overlayContainer} pointerEvents="box-none">
@@ -205,7 +217,11 @@ export default function MapsScreen() {
               <Text style={styles.valueHighlight}>Distance: {selectedStation.distanceMiles} mi</Text>
             </View>
           ) : (
-            <Text style={styles.subtitle}>Select a nearby {vehicleType.toUpperCase()} station from the map grid above.</Text>
+            <Text style={styles.subtitle}>
+              {gasStations.length === 0 
+                ? `No active ${vehicleType.toUpperCase()} nodes found in sector.` 
+                : `Select a nearby ${vehicleType.toUpperCase()} station from the map grid above.`}
+            </Text>
           )}
 
           <View style={styles.section}>

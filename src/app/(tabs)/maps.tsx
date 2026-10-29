@@ -39,6 +39,8 @@ export default function MapsScreen() {
   const fetchAiInsights = async (station: Station, cacheKey: string) => {
     try {
       setAiLoading(true);
+      
+      // Single request to your backend handling station context & Gemini AI lookup
       const response = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,8 +48,8 @@ export default function MapsScreen() {
           latitude: station.latitude,
           longitude: station.longitude,
           stationName: station.name,
-          stationCount: 4,
-          vehicleType: 'ev',
+          brand: station.brand,
+          stationType: station.type || 'gas', // Supports dynamic gas or EV routing
         }),
       });
 
@@ -68,19 +70,22 @@ export default function MapsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Wrap map in a container with flex: 1 so it expands to fill available space */}
+      {/* Map fills the entire background view */}
       <View style={styles.mapContainer}>
         <OpenGisMap onSelectStation={handleStationSelect} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.overlayContainer}>
+      {/* Floating card overlay positioned on top of the map */}
+      <ScrollView contentContainerStyle={styles.overlayContainer} pointerEvents="box-none">
         <View style={styles.card}>
           <Text style={styles.title}>$ commute-ease --gis</Text>
 
           {selectedStation ? (
             <View style={styles.section}>
               <Text style={styles.label}>Selected Node Target:</Text>
-              <Text style={styles.value}>{selectedStation.name} ({selectedStation.brand})</Text>
+              <Text style={styles.value}>
+                {selectedStation.name} {selectedStation.brand ? `(${selectedStation.brand})` : ''}
+              </Text>
               <Text style={styles.valueHighlight}>Distance: {selectedStation.distanceMiles} mi</Text>
             </View>
           ) : (
@@ -99,24 +104,36 @@ export default function MapsScreen() {
           </View>
         </View>
       </ScrollView>
-      
-      {/* Note: If you wanted the card to float directly on top of the map instead of stacking below it, 
-          you can change overlayContainer to use absolute positioning: 
-          overlayContainer: { position: 'absolute', bottom: 16, left: 16, right: 16 } */}
-    ☕</View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000000' },
-  mapContainer: { flex: 1 }, // Ensures the map component stretches to fill screen estate properly
-  overlayContainer: { padding: 16 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#000000' 
+  },
+  mapContainer: { 
+    flex: 1 
+  },
+  overlayContainer: { 
+    position: 'absolute', 
+    bottom: 16, 
+    left: 16, 
+    right: 16,
+    padding: 0 
+  },
   card: { 
-    backgroundColor: '#030d03', 
+    backgroundColor: 'rgba(3, 13, 3, 0.95)', // Slight transparency to let map peak through
     borderRadius: 16, 
     padding: 20, 
     borderWidth: 2, 
-    borderColor: '#00ff00' 
+    borderColor: '#00ff00',
+    shadowColor: '#00ff00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5
   },
   title: { 
     fontSize: 20, 
@@ -137,8 +154,23 @@ const styles = StyleSheet.create({
     borderBottomColor: '#003300', 
     paddingBottom: 8 
   },
-  label: { fontSize: 13, color: '#00cc00' },
-  value: { fontSize: 15, color: '#00ff00', fontWeight: 'bold' },
-  valueHighlight: { fontSize: 14, color: '#00ff00' },
-  aiText: { fontSize: 13, color: '#ffffff', fontStyle: 'italic', marginTop: 4 },
+  label: { 
+    fontSize: 13, 
+    color: '#00cc00' 
+  },
+  value: { 
+    fontSize: 15, 
+    color: '#00ff00', 
+    fontWeight: 'bold' 
+  },
+  valueHighlight: { 
+    fontSize: 14, 
+    color: '#00ff00' 
+  },
+  aiText: { 
+    fontSize: 13, 
+    color: '#ffffff', 
+    fontStyle: 'italic', 
+    marginTop: 4 
+  },
 });

@@ -11,19 +11,34 @@ export async function POST(request: Request) {
       return Response.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Generate a secret for TOTP
-    const secret = speakeasy.generateSecret({
-      name: 'CommuteEase',
+    // Fetch user details to label the authenticator entry
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
     });
 
-    // Save the base32 secret to the user's database record (keeping 2FA disabled until verified)
+    if (!user) {
+      return Response.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Generate secret with issuer and account name label
+    const secret = speakeasy.generateSecret({
+      issuer: 'CommuteEase',
+      name: `CommuteEase (${user.email})`,
+    });
+
+    // Save temporary base32 secret to user's record
     await prisma.user.update({
       where: { id: userId },
       data: { twoFactorSecret: secret.base32 },
     });
 
-    // Generate a QR code Data URL for frontend rendering
-    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url || '');
+    if (!secret.otpauth_url) {
+      throw new Error('Failed to generate otpauth URL');
+    }
+
+    // Generate QR Code Data URL for frontend display
+    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
 
     return Response.json(
       {

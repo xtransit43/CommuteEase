@@ -31,7 +31,8 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+// Changed/Added PUT handler to match frontend fetch call in settings.tsx
+export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { userId, vehicleType, vehicleMake, vehicleModel } = body;

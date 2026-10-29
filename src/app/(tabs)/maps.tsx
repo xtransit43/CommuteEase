@@ -5,29 +5,48 @@ import {
   View, 
   ActivityIndicator, 
   ScrollView,
-  InteractionManager
+  InteractionManager,
+  Platform
 } from 'react-native';
 import * as Location from 'expo-location';
+import * as SecureStore from 'expo-secure-store';
 import OpenGisMap, { Station } from '../../components/OpenGisMap';
 
 export default function MapsScreen() {
-  const [location, setLocation] = useState({ latitude: 37.7749, longitude: -122.4194 });
+  const [location, setLocation] = useState({ latitude: 51.48, longitude: 0 });
+  const [vehicleType, setVehicleType] = useState<'gas' | 'ev'>('gas'); // Default fallback
   const [gasStations, setGasStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [aiRecommendation, setAiRecommendation] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState<boolean>(false);
-  const [locationLoading, setLocationLoading] = useState<boolean>(true);
+  const [loadingStatus, setLoadingStatus] = useState<string>('Acquiring GPS lock...');
 
   const aiCacheRef = useRef<Map<string, string>>(new Map());
 
-  // 1. Get live GPS and fetch directly from Overpass API on mount
+  // 1. Fetch User Preferences & Live GPS on Mount
   useEffect(() => {
     (async () => {
       try {
+        // Get User ID from SecureStore / localStorage
+        let userId = null;
+        if (Platform.OS === 'web') {
+          userId = localStorage.getItem('userId');
+        } else {
+          userId = await SecureStore.getItemAsync('userId');
+        }
+
+        if (userId) {
+          const prefRes = await fetch(`/api/preferences?userId=${userId}`);
+          const prefData = await prefRes.json();
+          if (prefRes.ok && prefData.user?.vehicleType) {
+            setVehicleType(prefData.user.vehicleType);
+          }
+        }
+
+        // Request GPS Location Permissions
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          console.warn('Location permission denied');
-          setLocationLoading(false);
+          setLoadingStatus('Location permission denied');
           return;
         }
 
@@ -38,26 +57,28 @@ export default function MapsScreen() {
         };
         setLocation(userCoords);
 
-        // Fetch stations directly from Overpass API
-        await fetchStationsDirectly(userCoords.latitude, userCoords.longitude);
+        // Fetch stations matching their preferred vehicle type
+        setLoadingStatus('Querying Overpass GIS nodes...');
+        await fetchStationsDirectly(userCoords.latitude, userCoords.longitude, vehicleType);
       } catch (err) {
-        console.error('Error fetching GPS location:', err);
-      } finally {
-        setLocationLoading(false);
+        console.error('Initialization error:', err);
+        setLoadingStatus('Failed to initialize telemetry.');
       }
     })();
   }, []);
 
-  // Direct client-side Overpass query function
-  const fetchStationsDirectly = async (lat: number, lng: number) => {
-    const radius = 5000; // 5km search radius
+  // 2. Direct Overpass API Query filtered by User's Vehicle Type
+  const fetchStationsDirectly = async (lat: number, lng: number, prefType: 'gas' | 'ev') => {
+    const radius = 5000; // 5km radius
+    
+    // Dynamically query fuel stations or charging stations based on user preference
+    const amenityFilter = prefType === 'ev' ? '"amenity"="charging_station"' : '"amenity"="fuel"';
+    
     const overpassQuery = `
       [out:json][timeout:25];
       (
-        node["amenity"="fuel"](around:${radius},${lat},${lng});
-        way["amenity"="fuel"](around:${radius},${lat},${lng});
-        node["amenity"="charging_station"](around:${radius},${lat},${lng});
-        way["amenity"="charging_station"](around:${radius},${lat},${lng});
+        node[${amenityFilter}](around:${radius},${lat},${lng});
+        way[${amenityFilter}](around:${radius},${lat},${lng});
       );
       out body center;
     `;
@@ -82,27 +103,27 @@ export default function MapsScreen() {
 
           return {
             id: el.id || index,
-            name: el.tags?.name || (el.tags?.amenity === 'charging_station' ? 'EV Charging Hub' : 'Gas Station'),
+            name: el.tags?.name || (prefType === 'ev' ? 'EV Charging Hub' : 'Gas Station'),
             latitude: elementLat,
             longitude: elementLon,
             brand: el.tags?.brand || el.tags?.operator || 'Independent Node',
-            type: el.tags?.amenity === 'charging_station' ? 'ev' : 'gas',
+            type: prefType,
             distanceMiles: parseFloat(distanceMiles.toFixed(1)),
           };
         })
         .filter(Boolean);
 
-      // Sort by closest distance
       parsedStations.sort((a, b) => (a.distanceMiles || 0) - (b.distanceMiles || 0));
       setGasStations(parsedStations);
     } catch (err) {
-      console.error('Direct Overpass API fetch failed:', err);
+      console.error('Overpass fetch failed:', err);
+    } finally {
+      setLoadingStatus('');
     }
   };
 
-  // Helper utility for distance calculation (Haversine formula)
   const calculateDistanceMiles = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 3958.8; // Radius of Earth in miles
+    const R = 3958.8;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a =
@@ -139,7 +160,7 @@ export default function MapsScreen() {
           longitude: station.longitude,
           stationName: station.name,
           brand: station.brand,
-          stationType: station.type || 'gas',
+          vehicleType: vehicleType,
           stationCount: gasStations.length,
         }),
       });
@@ -173,18 +194,18 @@ export default function MapsScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>$ commute-ease --gis</Text>
 
-          {locationLoading ? (
-            <Text style={styles.subtitle}>Acquiring GPS & querying Overpass GIS...</Text>
+          {loadingStatus ? (
+            <Text style={styles.subtitle}>{loadingStatus}</Text>
           ) : selectedStation ? (
             <View style={styles.section}>
-              <Text style={styles.label}>Selected Node Target:</Text>
+              <Text style={styles.label}>Selected Node Target ({vehicleType.toUpperCase()}):</Text>
               <Text style={styles.value}>
                 {selectedStation.name} {selectedStation.brand ? `(${selectedStation.brand})` : ''}
               </Text>
               <Text style={styles.valueHighlight}>Distance: {selectedStation.distanceMiles} mi</Text>
             </View>
           ) : (
-            <Text style={styles.subtitle}>Select a nearby station from the map grid above.</Text>
+            <Text style={styles.subtitle}>Select a nearby {vehicleType.toUpperCase()} station from the map grid above.</Text>
           )}
 
           <View style={styles.section}>
@@ -193,7 +214,7 @@ export default function MapsScreen() {
               <ActivityIndicator size="small" color="#00ff00" style={{ marginTop: 6 }} />
             ) : (
               <Text style={styles.aiText}>
-                {aiRecommendation || 'Select a station to generate live transit guidance.'}
+                {aiRecommendation || `Select a node to generate live ${vehicleType.toUpperCase()} transit guidance.`}
               </Text>
             )}
           </View>
@@ -208,11 +229,11 @@ const styles = StyleSheet.create({
   mapContainer: { flex: 1 },
   overlayContainer: { position: 'absolute', bottom: 16, left: 16, right: 16, padding: 0 },
   card: { backgroundColor: 'rgba(3, 13, 3, 0.95)', borderRadius: 16, padding: 20, borderWidth: 2, borderColor: '#00ff00' },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#00ff00', textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 12, color: '#00cc00', textAlign: 'center', marginBottom: 12 },
+  title: { fontFamily: 'monospace', fontSize: 20, fontWeight: 'bold', color: '#00ff00', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontFamily: 'monospace', fontSize: 12, color: '#00cc00', textAlign: 'center', marginBottom: 12 },
   section: { marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#003300', paddingBottom: 8 },
-  label: { fontSize: 13, color: '#00cc00' },
-  value: { fontSize: 15, color: '#00ff00', fontWeight: 'bold' },
-  valueHighlight: { fontSize: 14, color: '#00ff00' },
-  aiText: { fontSize: 13, color: '#ffffff', fontStyle: 'italic', marginTop: 4 },
+  label: { fontFamily: 'monospace', fontSize: 13, color: '#00cc00' },
+  value: { fontFamily: 'monospace', fontSize: 15, color: '#00ff00', fontWeight: 'bold' },
+  valueHighlight: { fontFamily: 'monospace', fontSize: 14, color: '#00ff00' },
+  aiText: { fontFamily: 'monospace', fontSize: 13, color: '#ffffff', fontStyle: 'italic', marginTop: 4 },
 });

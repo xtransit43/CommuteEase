@@ -13,7 +13,7 @@ import * as SecureStore from 'expo-secure-store';
 import OpenGisMap, { Station } from '../../components/OpenGisMap';
 
 export default function MapsScreen() {
-  const [location, setLocation] = useState({ latitude: 51.48, longitude: 0 });
+  const [location, setLocation] = useState({ latitude: 51.48, longitude: -0 });
   const [vehicleType, setVehicleType] = useState<'gas' | 'ev'>('gas'); // Default fallback
   const [gasStations, setGasStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);

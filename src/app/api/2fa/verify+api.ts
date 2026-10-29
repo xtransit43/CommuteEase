@@ -10,6 +10,9 @@ export async function POST(request: Request) {
       return Response.json({ error: 'User ID and token are required' }, { status: 400 });
     }
 
+    // Clean space or hyphen formatting from token input
+    const cleanToken = token.toString().replace(/\s+|-/g, '');
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -22,8 +25,8 @@ export async function POST(request: Request) {
     const verified = speakeasy.totp.verify({
       secret: user.twoFactorSecret,
       encoding: 'base32',
-      token: token,
-      window: 1, // Allow a slight time drift window (30 seconds before/after)
+      token: cleanToken,
+      window: 1, // 30-second time drift allowance
     });
 
     if (!verified) {

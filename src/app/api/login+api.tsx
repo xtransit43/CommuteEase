@@ -36,6 +36,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Optional 2FA check if enabled in your schema
     if (user.isTwoFactorEnabled) {
       return Response.json(
         { 
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Successful login response returning user metadata and ID for local storage session
     return Response.json(
       { 
         message: 'Logged in successfully',

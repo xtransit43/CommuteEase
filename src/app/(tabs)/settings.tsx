@@ -12,6 +12,13 @@ import {
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 
+// Helper for cross-platform terminal font
+const terminalFont = Platform.select({
+  ios: 'Courier',
+  android: 'monospace',
+  default: 'monospace',
+});
+
 export default function SettingsScreen() {
   const [preferences, setPreferences] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -184,7 +191,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   title: { 
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     fontSize: 22, 
     fontWeight: 'bold', 
     marginBottom: 4, 
@@ -195,7 +202,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 6,
   },
   subtitle: { 
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     fontSize: 12, 
     color: '#00cc00', 
     marginBottom: 24, 
@@ -208,25 +215,25 @@ const styles = StyleSheet.create({
     paddingBottom: 12 
   },
   label: { 
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     fontSize: 13, 
     color: '#00cc00', 
     marginBottom: 4 
   },
   value: { 
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     fontSize: 15, 
     fontWeight: '500', 
     color: '#00ff00' 
   },
   valueHighlight: { 
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     fontSize: 16, 
     fontWeight: 'bold', 
     color: '#00ff00' 
   },
   actionHeader: { 
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     fontSize: 14, 
     fontWeight: '600', 
     marginTop: 10, 
@@ -252,19 +259,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,255,0,0.1)' 
   },
   optionText: { 
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     fontSize: 14, 
     fontWeight: 'bold', 
     color: '#00ff00' 
   },
   loadingText: { 
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     marginTop: 12, 
     color: '#00ff00', 
     fontSize: 14 
   },
   errorText: { 
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     color: '#ff4444', 
     fontSize: 15, 
     textAlign: 'center', 
@@ -277,7 +284,7 @@ const styles = StyleSheet.create({
     borderRadius: 8 
   },
   retryButtonText: { 
-    fontFamily: 'Comic Sans MS',
+    fontFamily: terminalFont,
     color: '#000000', 
     fontWeight: 'bold' 
   }

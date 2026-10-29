@@ -83,6 +83,7 @@ export default function LoginScreen() {
         if (Platform.OS === 'web') {
           localStorage.setItem('userId', data.user.id);
           if (data.user.username) localStorage.setItem('username', data.user.username);
+          window.dispatchEvent(new Event('storage')); // ⭐ Force instant layout update
         } else {
           await SecureStore.setItemAsync('userId', data.user.id);
           if (data.user.username) await SecureStore.setItemAsync('username', data.user.username);
@@ -105,6 +106,7 @@ export default function LoginScreen() {
       if (Platform.OS === 'web') {
         localStorage.removeItem('userId');
         localStorage.removeItem('username');
+        window.dispatchEvent(new Event('storage')); // ⭐ Force instant layout update
       } else {
         await SecureStore.deleteItemAsync('userId');
         await SecureStore.deleteItemAsync('username');

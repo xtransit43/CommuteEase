@@ -35,7 +35,8 @@ export default function SignupScreen() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/validate', {
+      // 1. Fetching your signup endpoint
+      const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
@@ -47,10 +48,12 @@ export default function SignupScreen() {
         throw new Error(data.error || 'Failed to create account.');
       }
 
+      // 2. Persist active user session upon account creation
       if (data.user?.id) {
         if (Platform.OS === 'web') {
           localStorage.setItem('userId', data.user.id);
           if (data.user.username) localStorage.setItem('username', data.user.username);
+          window.dispatchEvent(new Event('storage')); // ⭐ Trigger instant layout nav update
         } else {
           await SecureStore.setItemAsync('userId', data.user.id);
           if (data.user.username) await SecureStore.setItemAsync('username', data.user.username);
@@ -58,7 +61,7 @@ export default function SignupScreen() {
       }
 
       Alert.alert('Success', 'Account registered successfully!');
-      router.push('/login');
+      router.push('/'); // Navigate straight to home/maps with active session
     } catch (err: any) {
       Alert.alert('Registration Failed', err.message);
     } finally {

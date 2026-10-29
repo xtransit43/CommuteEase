@@ -19,7 +19,7 @@ type OpenGisMapProps = {
 };
 
 export function OpenGisMap({
-  location = { latitude: 37.7749, longitude: -122.4194 },
+  location = { latitude: 51.48, longitude: 0 },
   gasStations = [],
   selectedStation,
   onSelectStation,

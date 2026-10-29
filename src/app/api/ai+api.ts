@@ -1,17 +1,33 @@
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { latitude, longitude, vehicleType, stationCount } = body;
+    const { 
+      latitude, 
+      longitude, 
+      vehicleType, 
+      stationType, 
+      stationName, 
+      brand, 
+      stationCount = 4 
+    } = body;
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return Response.json({ error: 'Gemini API key not configured on server' }, { status: 500 });
     }
 
+    // Determine fuel/vehicle type label
+    const typeLabel = stationType || vehicleType || 'gas';
+    const formattedType = typeLabel === 'ev' ? 'Electric Vehicle (EV) charging' : 'Gas';
+    const displayBrand = brand ? ` (${brand})` : '';
+
     const prompt = `You are an expert commute assistant for the CommuteEase app. 
-    The user is driving a ${vehicleType === 'ev' ? 'Electric Vehicle (EV)' : 'Gas-powered'} vehicle, located at coordinates (${latitude}, ${longitude}). 
-    There are ${stationCount} compatible stations found within a 5km radius. 
-    Provide a concise, helpful, natural-language recommendation (max 3 sentences) on whether they should proceed or stop for service based on this data.`;
+    The user has selected the following ${formattedType} station:
+    - Target Node: ${stationName || 'Unknown Station'}${displayBrand}
+    - Coordinates: (${latitude}, ${longitude})
+    - Local Density: ${stationCount} compatible nodes found within a 5km radius. 
+    
+    Provide a concise, helpful, natural-language recommendation (max 3 sentences) on whether they should stop at this specific station or continue along their route.`;
 
     const aiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,

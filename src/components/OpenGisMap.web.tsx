@@ -65,7 +65,6 @@ export function OpenGisMapWeb({
                   styles.mapNodePin,
                   { top: `${35 + idx * 18}%`, left: `${40 + idx * 15}%` },
                   isSelected && styles.mapNodePinActive,
-                  // Cast cursor property for React Native Web compatibility without TS errors
                   { cursor: 'pointer' } as ViewStyle,
                 ]}
                 onPress={() => handleSelect(st)}
@@ -189,4 +188,4 @@ const styles = StyleSheet.create({
     position: 'absolute',
     height: '100%',
     width: 1,
-    backgroundColor: 'rgba(0, 255
+    backgroundColor: 'rgba(0,

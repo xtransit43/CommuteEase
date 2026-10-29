@@ -1,53 +1,39 @@
+import { GoogleGenAI } from '@google/genai';
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { 
-      latitude, 
-      longitude, 
-      vehicleType, 
-      stationType, 
-      stationName, 
-      brand, 
-      stationCount = 4 
-    } = body;
+    const { latitude, longitude, stationName, brand, vehicleType, stationCount } = await request.json();
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return Response.json({ error: 'Gemini API key not configured on server' }, { status: 500 });
+    if (!latitude || !longitude || !stationName) {
+      return Response.json({ error: 'Missing station metadata' }, { status: 400 });
     }
 
-    // Determine fuel/vehicle type label
-    const typeLabel = stationType || vehicleType || 'gas';
-    const formattedType = typeLabel === 'ev' ? 'Electric Vehicle (EV) charging' : 'Gas';
-    const displayBrand = brand ? ` (${brand})` : '';
+    // Craft a cyberpunk terminal-themed prompt for Gemini 1.5 Flash
+    const prompt = `
+      You are CommuteEase's core AI telemetry system operating in a cyberpunk terminal environment.
+      Provide a concise, highly tactical 2-3 sentence route assessment and recommendation for a driver 
+      operating a [${vehicleType?.toUpperCase() || 'GAS'}] vehicle heading towards the following target node:
+      
+      - Station Name: ${stationName}
+      - Brand/Operator: ${brand || 'Independent Node'}
+      - Coordinates: Lat ${latitude}, Lng ${longitude}
+      - Total Detected Nodes in Sector: ${stationCount || 'Unknown'}
 
-    const prompt = `You are an expert commute assistant for the CommuteEase app. 
-    The user has selected the following ${formattedType} station:
-    - Target Node: ${stationName || 'Unknown Station'}${displayBrand}
-    - Coordinates: (${latitude}, ${longitude})
-    - Local Density: ${stationCount} compatible nodes found within a 5km radius. 
-    
-    Provide a concise, helpful, natural-language recommendation (max 3 sentences) on whether they should stop at this specific station or continue along their route.`;
+      Keep the tone sharp, professional, futuristic, and actionable. Avoid generic filler.
+    `;
 
-    const aiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-        }),
-      }
-    );
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: prompt,
+    });
 
-    const aiData = await aiResponse.json();
-    const recommendation =
-      aiData?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      'Your route looks clear! Proceed with standard travel precautions.';
+    const recommendation = response.text || 'Telemetry link unstable. Proceed with caution.';
 
-    return Response.json({ recommendation }, { status: 200 });
+    return Response.json({ success: true, recommendation }, { status: 200 });
   } catch (error: any) {
-    console.error('AI Insights error:', error);
-    return Response.json({ error: 'Failed to generate commute insights' }, { status: 500 });
+    console.error('Gemini AI API Error:', error);
+    return Response.json({ error: 'Failed to generate AI telemetry assessment.' }, { status: 500 });
   }
 }

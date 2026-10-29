@@ -28,13 +28,20 @@ export default function TwoFactorVerifyScreen() {
       return;
     }
 
+    if (!userId) {
+      Alert.alert('Error', 'Session identifier missing. Please log in again.');
+      router.replace('/login');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await fetch('/api/verify', {
+      // ⭐ Updated endpoint to match your backend path (/api/2fa/verify)
+      const response = await fetch('/api/2fa/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, email, token }),
+        body: JSON.stringify({ userId, token }),
       });
 
       const data = await response.json();
@@ -43,14 +50,14 @@ export default function TwoFactorVerifyScreen() {
         throw new Error(data.error || 'Invalid verification code.');
       }
 
-      if (data.user?.id) {
-        if (Platform.OS === 'web') {
-          localStorage.setItem('userId', data.user.id);
-          if (data.user.username) localStorage.setItem('username', data.user.username);
-        } else {
-          await SecureStore.setItemAsync('userId', data.user.id);
-          if (data.user.username) await SecureStore.setItemAsync('username', data.user.username);
-        }
+      // Persist active session storage
+      if (Platform.OS === 'web') {
+        localStorage.setItem('userId', userId);
+        if (email) localStorage.setItem('username', email.split('@')[0]);
+        window.dispatchEvent(new Event('storage')); // ⭐ Force instant layout nav update
+      } else {
+        await SecureStore.setItemAsync('userId', userId);
+        if (email) await SecureStore.setItemAsync('username', email.split('@')[0]);
       }
 
       Alert.alert('Success', '2FA verified successfully!');
